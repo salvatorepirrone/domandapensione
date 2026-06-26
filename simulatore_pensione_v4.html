@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulatore Domanda di Pensione — INPS</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:"Titillium Web","Segoe UI",Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+:root{
+  --blue:#003370;--blue2:#005CA9;--red:#CC0000;--cyan:#00A3DA;
+  --light:#E8F0F8;--border:#C5D3E0;
+  --auto-bg:#EAF4FB;--auto-bd:#5BA4CF;
+  --warn-bg:#FFF8E1;--warn-bd:#F9A825;
+  --ok-bg:#E8F5E9;--ok-bd:#43A047;
+  --blk-bg:#FFEBEE;--blk-bd:#C62828;
+  --dis-bg:#F5F5F5;--dis-txt:#9E9E9E;--dis-bd:#BDBDBD;
+  --muted:#546e7a;--radius:6px;
+}
+.hdr{background:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.hdr-top{display:flex;align-items:center;gap:16px;padding:10px 32px;border-bottom:3px solid var(--red)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:52px;height:52px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.logo-txt strong{font-size:22px;letter-spacing:.04em;color:white;display:block}
+.logo-txt span{font-size:11px;color:rgba(255,255,255,.8);letter-spacing:.03em}
+.nav{background:var(--blue2);padding:0 32px;display:flex;gap:4px}
+.nav a{color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;padding:8px 14px;border-bottom:3px solid transparent}
+.nav a:hover,.nav a.on{color:white;border-bottom-color:var(--cyan)}
+.bc{background:white;border-bottom:1px solid var(--border);padding:8px 32px;font-size:12.5px;color:var(--muted)}
+.bc a{color:var(--blue2);text-decoration:none}
+.wrap{max-width:860px;margin:28px auto 60px;padding:0 20px}
+.ptitle{background:white;border-radius:var(--radius);border-left:5px solid var(--blue);padding:20px 24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.ptitle h1{font-size:22px;color:var(--blue);font-weight:700;margin-bottom:4px}
+.ptitle p{font-size:14px;color:var(--muted);line-height:1.5}
+/* STEP INDICATOR */
+.steps-wrap{background:white;border-radius:var(--radius);padding:18px 24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.steps{display:flex;align-items:flex-start;position:relative}
+.steps::before{content:'';position:absolute;top:16px;left:20px;right:20px;height:2px;background:var(--border);z-index:0}
+.step-fill{position:absolute;top:16px;left:20px;height:2px;background:var(--blue2);z-index:1;transition:width .4s ease}
+.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;position:relative;z-index:2}
+.step-dot{width:32px;height:32px;border-radius:50%;background:white;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--muted);transition:all .3s}
+.step.done .step-dot{background:var(--blue2);border-color:var(--blue2);color:white}
+.step.active .step-dot{background:var(--blue);border-color:var(--blue);color:white;box-shadow:0 0 0 4px rgba(0,51,112,.12)}
+.step-lbl{font-size:11px;color:var(--muted);text-align:center;line-height:1.3;max-width:90px}
+.step.active .step-lbl{color:var(--blue);font-weight:600}
+.step.done  .step-lbl{color:var(--blue2)}
+/* CARD */
+.card{background:white;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden}
+.card-hdr{background:var(--blue);color:white;padding:14px 24px;display:flex;align-items:center;gap:10px}
+.card-hdr .pbadge{background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px}
+.card-hdr h2{font-size:16px;font-weight:600}
+.cbody{padding:28px 24px}
+/* CHOICE CARDS (passo 0) */
+.choice-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+@media(max-width:580px){.choice-cards{grid-template-columns:1fr}}
+.choice-card{border:2px solid var(--border);border-radius:10px;padding:22px 20px;cursor:pointer;background:white;text-align:center;transition:all .2s}
+.choice-card:hover{border-color:var(--blue2);background:var(--light)}
+.choice-card .cc-icon{font-size:36px;margin-bottom:10px}
+.choice-card .cc-title{font-size:16px;font-weight:700;color:var(--blue);margin-bottom:6px}
+.choice-card .cc-desc{font-size:13px;color:var(--muted);line-height:1.5}
+/* FORM */
+.frow{margin-bottom:20px}
+.frow label{display:block;font-size:14px;font-weight:600;color:var(--blue);margin-bottom:6px}
+.frow .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.frow input[type=number],.frow input[type=text],.frow select{
+  padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-size:15px;background:white;transition:border-color .2s;width:100%}
+.frow input[type=number]{max-width:180px}
+.frow input:focus,.frow select:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 3px rgba(0,92,169,.12)}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:600px){.fgrid{grid-template-columns:1fr 1fr}}
+/* RADIO GENERE */
+.radio-group{display:flex;gap:12px;margin-top:4px}
+.radio-btn{display:flex;align-items:center;gap:8px;cursor:pointer;padding:11px 20px;border:2px solid var(--border);border-radius:var(--radius);font-weight:600;font-size:15px;background:white;transition:all .15s;user-select:none}
+.radio-btn:hover{border-color:var(--blue2);background:var(--light)}
+.radio-btn.sel{border-color:var(--blue);background:var(--light)}
+.radio-btn input{width:16px;height:16px;accent-color:var(--blue2);flex-shrink:0}
+/* CHECKBOX */
+.chk-group{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.chk-item{display:flex;align-items:flex-start;gap:11px;padding:12px 15px;border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s}
+.chk-item:not(.dis):hover{border-color:var(--blue2);background:var(--light)}
+.chk-item.dis{background:var(--dis-bg);cursor:not-allowed;opacity:.75}
+.chk-item input[type=checkbox]{width:18px;height:18px;margin-top:1px;flex-shrink:0;accent-color:var(--blue2)}
+.chk-item.dis input{pointer-events:none}
+.cl{font-size:14px;font-weight:600;line-height:1.3}
+.cd{font-size:12px;color:var(--muted);margin-top:2px}
+.chk-item.dis .cl{color:var(--dis-txt)}
+.chk-item.dis .cd{color:var(--dis-txt)}
+.dis-why{font-size:11px;color:#b71c1c;margin-top:4px;font-style:italic}
+/* INFO BOXES */
+.infobox{background:var(--auto-bg);border:1px solid var(--auto-bd);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:#1a3a5c;display:flex;gap:10px;margin-bottom:18px}
+.infobox-warn{background:#FFF9F0;border:1px solid #F9A825;border-radius:var(--radius);padding:12px 16px;font-size:13px;color:#4a3800;display:flex;gap:10px;margin-bottom:18px}
+.stitle{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--blue2);margin-bottom:12px}
+.sdiv{border:none;border-top:1px solid var(--border);margin:22px 0}
+/* WIZARD */
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.qblock{animation:fi .22s ease}
+.qlabel{font-size:18px;font-weight:700;color:var(--blue);margin-bottom:5px;line-height:1.4}
+.qsub{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.auto-badge{display:inline-flex;align-items:center;gap:6px;background:var(--auto-bg);border:1px solid var(--auto-bd);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#1a4a6e;letter-spacing:.03em;margin-bottom:14px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{width:100%;text-align:left;padding:14px 18px;border:2px solid var(--border);border-radius:var(--radius);background:white;cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:14px;position:relative}
+.opt:hover:not(:disabled){border-color:var(--blue2);background:var(--light)}
+.opt:disabled{background:var(--dis-bg);border-color:var(--dis-bd);cursor:not-allowed}
+.opt:disabled .ob-title{color:var(--dis-txt)}
+.opt:disabled .ob-icon{opacity:.4}
+.opt:disabled .ob-arrow{display:none}
+.opt.suggested{border-color:var(--ok-bd);background:var(--ok-bg)}
+.opt.suggested::before{content:"Consigliato";position:absolute;top:-10px;right:12px;background:var(--ok-bd);color:white;font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px}
+.ob-icon{width:36px;height:36px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.ob-title{font-size:14px;font-weight:700;color:#1a1a1a;line-height:1.3}
+.ob-desc{font-size:12px;color:var(--muted);margin-top:3px}
+.ob-why{font-size:11px;color:#b71c1c;margin-top:3px;font-style:italic}
+.ob-arrow{margin-left:auto;color:var(--blue2);font-size:18px;align-self:center}
+.trail{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px}
+.trail-chip{background:#f0f2f5;border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--muted)}
+.trail-chip::before{content:"›";margin-right:5px}
+/* RESULT */
+.res-card{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.res-hdr{padding:16px 20px;display:flex;align-items:center;gap:12px}
+.res-hdr.ok{background:var(--ok-bg);border-bottom:2px solid var(--ok-bd)}
+.res-hdr.warn{background:var(--warn-bg);border-bottom:2px solid var(--warn-bd)}
+.res-hdr.block{background:var(--blk-bg);border-bottom:2px solid var(--blk-bd)}
+.ricon{font-size:28px}
+.rtag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-bottom:2px}
+.rtitle{font-size:18px;font-weight:700;color:#1a1a1a}
+.rbody{padding:20px}
+.rcode{font-family:monospace;font-size:12px;color:var(--muted);background:#f0f2f5;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:12px}
+.rdesc{font-size:14px;line-height:1.65;color:#2c2c2c;margin-bottom:14px}
+.callout{background:var(--warn-bg);border-left:4px solid var(--warn-bd);border-radius:0 var(--radius) var(--radius) 0;padding:10px 14px;font-size:13px;line-height:1.5;margin-bottom:14px;color:#4a3800}
+.chrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chbdg{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.chbdg.ok{background:var(--ok-bg);color:#2e7d32;border:1px solid #a5d6a7}
+.chbdg.no{background:#f5f5f5;color:#9e9e9e;border:1px solid #e0e0e0}
+.counter{background:#f0f2f5;border-radius:var(--radius);padding:12px 16px;font-size:13px;color:#37474f}
+.counter strong.n{color:var(--blue);font-size:20px}
+.profsum{background:var(--light);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-size:13px;margin-bottom:14px}
+.profsum h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+.pchips{display:flex;gap:5px;flex-wrap:wrap}
+.pchip{background:white;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:12px;color:#1a3a5c}
+.pchip.spec{background:#FFF8E1;border-color:var(--warn-bd);color:#7B4700}
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.btn{padding:11px 22px;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:var(--blue2)}
+.btn-secondary{background:white;color:var(--blue);border:2px solid var(--border)}
+.btn-secondary:hover{border-color:var(--blue2);background:var(--light)}
+.btn-restart{background:white;color:var(--red);border:2px solid #ffcdd2}
+.btn-restart:hover{background:#ffebee}
+footer{background:var(--blue);color:rgba(255,255,255,.7);padding:24px 32px;font-size:12px;text-align:center}
+footer a{color:var(--cyan);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-top">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg width="44" height="28" viewBox="0 0 44 28"><rect width="44" height="28" rx="3" fill="#003370"/><text x="2" y="21" font-family="Arial" font-weight="900" font-size="16" fill="white">INPS</text></svg>
+      </div>
+      <div class="logo-txt">
+        <strong>INPS</strong>
+        <span>Istituto Nazionale Previdenza Sociale</span>
+      </div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="#">Prestazioni</a><a href="#">Pensione</a>
+    <a href="#" class="on">Simulatori</a><a href="#">MyINPS</a><a href="#">Patronati</a>
+  </nav>
+</header>
+<div class="bc"><a href="#">Home</a> › <a href="#">Pensione</a> › <a href="#">Domanda di Pensione</a> › Simulatore</div>
+
+<main class="wrap">
+  <div class="ptitle">
+    <h1>Simulatore di indirizzamento — Domanda di Pensione</h1>
+    <p>Percorso guidato per identificare la tipologia di domanda pensionistica pertinente alla tua posizione. Le opzioni non accessibili per mancanza di requisiti sono disabilitate con la motivazione.</p>
+  </div>
+  <div class="steps-wrap">
+    <div class="steps">
+      <div class="step-fill" id="stepFill" style="width:0%"></div>
+      <div class="step active" id="st0"><div class="step-dot">1</div><div class="step-lbl">Tipo di richiesta</div></div>
+      <div class="step"        id="st1"><div class="step-dot">2</div><div class="step-lbl">Profilo INPS</div></div>
+      <div class="step"        id="st2"><div class="step-dot">3</div><div class="step-lbl">Situazioni dichiarate</div></div>
+      <div class="step"        id="st3"><div class="step-dot">4</div><div class="step-lbl">Wizard</div></div>
+      <div class="step"        id="st4"><div class="step-dot">5</div><div class="step-lbl">Risultato</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="pbadge" id="pbadge">PASSO 1 DI 5</span>
+      <h2 id="ctitle">Tipo di richiesta</h2>
+    </div>
+    <div class="cbody" id="cbody"></div>
+  </div>
+</main>
+
+<footer>Istituto Nazionale Previdenza Sociale — Simulatore a scopo orientativo.
+Per informazioni ufficiali contatta <a href="#">il tuo patronato</a> o <a href="#">la sede INPS</a>.</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATO
+// ═══════════════════════════════════════════════════════════
+const S = {
+  tipologia: null,   // 'diretta' | 'superstiti'
+  profile: {},       // passo 2 (dati INPS)
+  declared: {},      // passo 3 (dichiarazioni cittadino)
+  history: [],       // percorso wizard
+  current: null,
+};
+
+function setStep(n) {
+  const badges = ['PASSO 1 DI 5','PASSO 2 DI 5','PASSO 3 DI 5','PASSO 4 DI 5','PASSO 5 DI 5'];
+  document.getElementById('pbadge').textContent = badges[n];
+  const pcts = ['0%','25%','50%','75%','100%'];
+  document.getElementById('stepFill').style.width = pcts[n];
+  [0,1,2,3,4].forEach(i => {
+    const el = document.getElementById('st'+i);
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOTORE DI ELIGIBILITÀ
+// ═══════════════════════════════════════════════════════════
+function calcElig(prof, decl) {
+  const anno  = prof.annoInizio || 9999;
+  const eta   = prof.eta   || 0;
+  const anni  = prof.anni  || 0;
+  const sesso = prof.sesso || 'm';
+
+  const isMisto = anno < 1996;
+  const isCP    = anno >= 1996;
+  const annoNasc = 2026 - eta;
+
+  // Età stimate alle date di vigenza
+  const etaAl2021 = 2021 - annoNasc;
+  const etaAl2022 = 2022 - annoNasc;
+  const etaAl2025 = 2025 - annoNasc;
+  const aaAl2021  = Math.max(0, anni - 5);
+  const aaAl2022  = Math.max(0, anni - 4);
+  const aaAl2025  = Math.max(0, anni - 1);
+
+  const sogliAAnt = sesso === 'f' ? 41 + 10/12 : 42 + 10/12;
+
+  // Gestioni (esteri ora provengono da decl)
+  const hasGS    = prof.gests?.includes('gs');
+  const hasExcl  = prof.gests?.includes('inpdap');
+  const hasCassa = prof.gests?.includes('cassa');
+  const soloAGO  = !hasGS && !hasExcl && !hasCassa;
+
+  // Dichiarazioni
+  const D = decl || {};
+  const hasEst      = !!D.esteri;
+  const isGravosi   = !!D.gravosi;
+  const isSalv      = !!D.salvaguardia;
+  const isAmianto   = !!D.amianto;
+  const isPa        = !!D.pa;
+  const isEditoria  = !!D.editoria;
+  const isVittima   = !!D.vittima;
+  const isPrecoce   = !!D.precoce;
+  const isInvalido  = !!D.invalido;
+  const isSuperstite= !!D.superstite;
+  const hasQ100     = !!D.q100;
+  const hasQ102     = !!D.q102;
+  const hasQ103     = !!D.q103;
+  const hasDonna    = !!D.donna;
+
+  // ── Accesso vecchiaia ──────────────────────────────────
+  // Vecchiaia ORDINARIA: 67 anni + 20 anni contributi (sistema misto)
+  //                   o 67 anni + 5 anni effettivi (contributivo puro)
+  const canVecOrd  = isMisto && eta >= 67 && anni >= 20;
+  const canVecCP   = isCP    && eta >= 67 && anni >= 5;
+  const canVec     = canVecOrd || canVecCP;
+  const sugVec     = canVec;   // suggerisci solo se davvero accessibile
+
+  // Vecchiaia ANTICIPATA 64 anni (CP)
+  const canCP64    = isCP && eta >= 64 && anni >= 20;
+
+  // ── Accesso anticipata ─────────────────────────────────
+  const canAntOrd  = isMisto && anni >= sogliAAnt;
+  // Può accedere all'anticipata se ha almeno uno dei percorsi
+  const canAnz = canAntOrd || hasQ100 || hasQ102 || hasQ103 || isGravosi ||
+                 hasDonna || isSalv || isAmianto || isPa || isVittima ||
+                 isPrecoce || isEditoria || isCP;
+  const sugAnz = canAnz && !canVec;
+
+  // ── Messaggi disabilitazione ───────────────────────────
+  function whyQ100() {
+    if (etaAl2021 < 62) return `Al 31/12/2021 avevi circa ${etaAl2021} anni: servivano 62 anni.`;
+    if (aaAl2021  < 38) return `Al 31/12/2021 avevi circa ${aaAl2021} anni di contributi: ne servivano 38.`;
+    return null;
+  }
+  function whyQ102() {
+    if (etaAl2022 < 64) return `Al 31/12/2022 avevi circa ${etaAl2022} anni: servivano 64 anni.`;
+    if (aaAl2022  < 38) return `Al 31/12/2022 avevi circa ${aaAl2022} anni di contributi: ne servivano 38.`;
+    return null;
+  }
+  function whyQ103() {
+    if (etaAl2025 < 62) return `Al 31/12/2025 avevi circa ${etaAl2025} anni: servivano 62 anni.`;
+    if (aaAl2025  < 41) return `Al 31/12/2025 avevi circa ${aaAl2025} anni di contributi: ne servivano 41.`;
+    return null;
+  }
+  function whyDonna() {
+    if (sesso !== 'f') return 'Misura riservata alle lavoratrici.';
+    if (etaAl2025 < 59) return `Al 31/12/2025 avevi circa ${etaAl2025} anni: servivano almeno 59 anni (con 2 figli; 61 senza riduzioni).`;
+    if (aaAl2025  < 35) return `Al 31/12/2025 avevi circa ${aaAl2025} anni di contributi: ne servivano 35.`;
+    return null;
+  }
+  function whyVec() {
+    if (eta < 67) return `Occorrono 67 anni (hai ${eta}) per la pensione di vecchiaia ordinaria.`;
+    if (isMisto && anni < 20) return `Nel sistema misto occorrono 20 anni di contributi (hai ${anni}).`;
+    if (isCP    && anni < 5)  return `Nel sistema contributivo puro occorrono 5 anni effettivi (hai ${anni}).`;
+    return null;
+  }
+  function whyAnz() {
+    if (canVec) return `Hai ${eta} anni: la pensione di vecchiaia ordinaria è già accessibile — è la via principale.`;
+    if (!canAnz) return `Non risultano ancora percorsi anticipati accessibili con ${eta} anni e ${anni} anni di contributi.`;
+    return null;
+  }
+
+  // Eligibility p2 (step 3 — dichiarazioni)
+  const p2 = {
+    q100:         { ok: !whyQ100(),  why: whyQ100() },
+    q102:         { ok: !whyQ102(),  why: whyQ102() },
+    q103:         { ok: !whyQ103(),  why: whyQ103() },
+    donna:        { ok: !whyDonna(), why: whyDonna() },
+    gravosi:      { ok: true,        why: null },
+    salvaguardia: { ok: true,        why: null },
+    amianto:      { ok: true,        why: null },
+    precoce:      { ok: anni >= 35,  why: anni < 35 ? `Con ${anni} anni di contributi il requisito dei 41 anni totali è difficilmente raggiungibile.` : null },
+    pa:           { ok: hasExcl,     why: !hasExcl ? 'Richiede contributi nella Gestione Pubblica (ex-INPDAP): non risulta nel tuo profilo.' : null },
+    editoria:     { ok: true,        why: null },
+    vittima:      { ok: true,        why: null },
+    invalido:     { ok: true,        why: null },
+    superstite:   { ok: true,        why: null },
+    esteri:       { ok: true,        why: null },
+  };
+
+  const gpWhy = !hasExcl ? 'Richiede contributi nella Gestione Pubblica (ex-INPDAP): non risulta nel tuo profilo.' : null;
+
+  // Eligibility wizard (step 4)
+  const w = {
+    // EVENTO — vecchiaia disabilitata se non ha i requisiti; anticipata disabilitata se ha già 67+
+    anz: { ok: canAnz,  suggested: sugAnz,
+           why: whyAnz() },
+    vec: { ok: canVec,  suggested: sugVec,
+           why: whyVec() },
+    inv: { ok: true,    why: null },
+    sup: { ok: true,    suggested: isSuperstite, why: null },
+    // GESTIONI
+    solo_ago: { ok: soloAGO, why: null },
+    ago_gs:   { ok: hasGS,    why: !hasGS    ? 'Non risultano contributi in Gestione Separata nel tuo profilo.' : null },
+    ago_excl: { ok: hasExcl,  why: !hasExcl  ? 'Non risultano contributi in forme esclusive/esonerative (es. ex-INPDAP).' : null },
+    cassa:    { ok: hasCassa, why: !hasCassa  ? 'Non risulta una Cassa professionale privata nel tuo profilo.' : null },
+    esteri:   { ok: hasEst,   why: !hasEst   ? 'Non hai dichiarato periodi di lavoro all\'estero.' : null },
+    dm282:    { ok: hasGS,    why: !hasGS    ? 'Il computo DM282 richiede contributi sia in AGO sia in Gestione Separata.' : null },
+    cumulo:   { ok: hasExcl || hasCassa, why: null },
+    totaliz:  { ok: hasExcl || hasCassa, why: null },
+    una_gest: { ok: true, why: null },
+    // REGIME
+    misto: { ok: isMisto, suggested: isMisto, why: !isMisto ? `Prima contribuzione nel ${anno}: sistema contributivo puro.` : null },
+    puro:  { ok: isCP,    suggested: isCP,    why: !isCP   ? `Prima contribuzione nel ${anno}: sistema misto.` : null },
+    // SITUAZIONI SPECIALI
+    gravosi:  { ok: isGravosi,  suggested: isGravosi,  why: !isGravosi  ? 'Non hai dichiarato lavori gravosi o usuranti.' : null },
+    salv1:    { ok: isSalv,                             why: !isSalv     ? 'Non hai dichiarato appartenenza a platea di salvaguardia.' : null },
+    salv2:    { ok: isSalv,                             why: !isSalv     ? 'Non hai dichiarato appartenenza a platea di salvaguardia.' : null },
+    amianto:  { ok: isAmianto,  suggested: isAmianto,  why: !isAmianto  ? 'Non hai dichiarato esposizione ad amianto.' : null },
+    pa:       { ok: isPa && hasExcl, suggested: isPa && hasExcl,
+                why: !hasExcl ? 'Richiede contributi nella Gestione Pubblica (ex-INPDAP): non risulta nel tuo profilo.' : !isPa ? 'Non hai dichiarato accordo di esubero PA.' : null },
+    vittima:  { ok: isVittima,  suggested: isVittima,   why: !isVittima ? 'Non hai dichiarato lo status di vittima.' : null },
+    precoce:  { ok: isPrecoce && anni >= 41,
+                why: !isPrecoce ? 'Non hai dichiarato la condizione di lavoratore precoce.' : anni < 41 ? `Occorrono 41 anni di contributi (hai ${anni}).` : null },
+    editoria: { ok: isEditoria, suggested: isEditoria, why: !isEditoria  ? 'Non hai dichiarato accordo di prepensionamento editoria.' : null },
+    opzc:     { ok: sesso === 'f' && isMisto, why: sesso !== 'f' ? 'Riservato alle lavoratrici.' : !isMisto ? 'Solo nel sistema misto.' : null },
+    nessuna:  { ok: true, why: null },
+    // PERCORSO STANDARD
+    ord:   { ok: isMisto && anni >= sogliAAnt,
+             suggested: isMisto && anni >= sogliAAnt && !isGravosi && !hasDonna,
+             why: !isMisto ? 'Sei nel sistema contributivo puro.' : anni < sogliAAnt ? `Servono ${sesso==='f'?'41a+10m':'42a+10m'} di contributi (hai ${anni} anni).` : null },
+    q100:  { ok: hasQ100, why: !hasQ100 ? 'Non hai dichiarato il diritto Quota 100.' : null },
+    q102:  { ok: hasQ102, why: !hasQ102 ? 'Non hai dichiarato il diritto Quota 102.' : null },
+    q103:  { ok: hasQ103, suggested: hasQ103 && !canAntOrd, why: !hasQ103 ? 'Non hai dichiarato il diritto Quota 103/Flessibile.' : null },
+    donna: { ok: hasDonna, suggested: hasDonna, why: !hasDonna ? 'Non hai dichiarato il diritto opzione donna.' : null },
+    // CONTRIBUTIVO PURO
+    ok64:  { ok: isCP && eta >= 64 && anni >= 20, suggested: isCP && eta >= 64 && anni >= 20,
+             why: !isCP ? 'Sei nel sistema misto.' : eta < 64 ? `Occorrono 64 anni (hai ${eta}).` : anni < 20 ? `Occorrono 20 anni di contributi (hai ${anni}).` : null },
+    no64:  { ok: isCP && (eta < 64 || anni < 20),
+             why: isCP && eta >= 64 && anni >= 20 ? 'Potresti accedere a 64 anni: verifica la soglia assegno.' : !isCP ? 'Sei nel sistema misto.' : null },
+    opz:   { ok: isCP && sesso === 'f', why: !isCP ? 'Sei nel sistema misto.' : sesso !== 'f' ? 'Riservato alle lavoratrici.' : null },
+    // VECCHIAIA SPECIALE
+    std_vec:  { ok: canVecOrd, suggested: canVecOrd,
+                why: !canVecOrd ? (eta < 67 ? `Occorrono 67 anni (hai ${eta}).` : `Occorrono 20 anni di contributi (hai ${anni}).`) : null },
+    cp64_vec: { ok: canCP64, suggested: canCP64,
+                why: !isCP ? 'Solo sistema contributivo puro.' : !canCP64 ? `Occorrono 64 anni + 20aa contributi (hai ${eta}a, ${anni}aa).` : null },
+    opzc_vec: { ok: sesso === 'f', why: sesso !== 'f' ? 'Riservato alle lavoratrici.' : null },
+    suppl_vec:{ ok: true, why: null },
+    tr_aoi:   { ok: isInvalido, why: !isInvalido ? 'Richiede titolarità di AOI in corso.' : null },
+    tr_inv:   { ok: isInvalido, why: !isInvalido ? 'Richiede titolarità di pensione di invalidità.' : null },
+    deroga:   { ok: anno < 1996, why: anno >= 1996 ? 'Riservato a posizioni ante-L.335/1995.' : null },
+    salv_vec: { ok: isSalv,    why: !isSalv    ? 'Non hai dichiarato appartenenza a salvaguardia.' : null },
+    l205_vec: { ok: sesso === 'f', why: sesso !== 'f' ? 'Riservato alle lavoratrici.' : null },
+    vit_vec:  { ok: isVittima,  why: !isVittima  ? 'Non hai dichiarato lo status di vittima.' : null },
+    am_vec:   { ok: isAmianto,  why: !isAmianto  ? 'Non hai dichiarato esposizione ad amianto.' : null },
+    est_vec:  { ok: hasEst,     why: !hasEst     ? 'Non hai dichiarato periodi all\'estero.' : null },
+    gp46:   { ok: hasExcl, why: gpWhy },
+    gp47:   { ok: hasExcl, why: gpWhy },
+    ind_gp: { ok: hasExcl, why: gpWhy },
+  };
+
+  return { p2, w };
+}
+
+// ═══════════════════════════════════════════════════════════
+// PASSO 1 — TIPO DI RICHIESTA (diretta o superstiti)
+// ═══════════════════════════════════════════════════════════
+function renderStep0() {
+  setStep(0);
+  document.getElementById('ctitle').textContent = 'Tipo di richiesta';
+  document.getElementById('cbody').innerHTML = `
+    <p style="font-size:15px;color:var(--muted);margin-bottom:22px;line-height:1.6">
+      Prima di tutto: la pensione che vuoi richiedere riguarda te direttamente, oppure sei un familiare di un iscritto o pensionato deceduto?
+    </p>
+    <div class="choice-cards">
+      <div class="choice-card" onclick="selectTipo('diretta')">
+        <div class="cc-icon">👤</div>
+        <div class="cc-title">Pensione diretta</div>
+        <div class="cc-desc">Anzianità, vecchiaia, invalidità o inabilità basate sulla tua posizione contributiva personale.</div>
+      </div>
+      <div class="choice-card" onclick="selectTipo('superstiti')">
+        <div class="cc-icon">🌿</div>
+        <div class="cc-title">Pensione ai superstiti</div>
+        <div class="cc-desc">Reversibilità o pensione indiretta in qualità di familiare (coniuge, figlio, genitore) di un iscritto o pensionato deceduto.</div>
+      </div>
+    </div>`;
+}
+
+function selectTipo(tipo) {
+  S.tipologia = tipo;
+  if (tipo === 'diretta') {
+    renderStep1();
+  } else {
+    renderStepSuperstiti();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PERCORSO SUPERSTITI — dati de cuius
+// ═══════════════════════════════════════════════════════════
+function renderStepSuperstiti() {
+  setStep(1);
+  document.getElementById('ctitle').textContent = 'Dati del de cuius';
+  document.getElementById('cbody').innerHTML = `
+    <div class="infobox">
+      <span style="font-size:16px;flex-shrink:0">🌿</span>
+      <div>Per la pensione ai superstiti occorrono i dati anagrafici e contributivi della persona deceduta, non del richiedente. Inserisci il codice fiscale o i dati anagrafici del de cuius per consentire all'INPS di recuperare la sua posizione contributiva.</div>
+    </div>
+
+    <div class="stitle">Codice fiscale del de cuius</div>
+    <div class="frow">
+      <label for="dc_cf">Codice fiscale</label>
+      <input type="text" id="dc_cf" placeholder="es. RSSMRA50A01H501Z" maxlength="16"
+             style="max-width:260px;text-transform:uppercase"
+             oninput="this.value=this.value.toUpperCase();checkCF()">
+      <div class="hint" id="cf_hint">16 caratteri alfanumerici</div>
+    </div>
+
+    <div class="sdiv"></div>
+    <div class="stitle">Oppure inserisci i dati anagrafici</div>
+    <div class="fgrid">
+      <div class="frow">
+        <label for="dc_nome">Nome</label>
+        <input type="text" id="dc_nome" placeholder="es. Mario">
+      </div>
+      <div class="frow">
+        <label for="dc_cogn">Cognome</label>
+        <input type="text" id="dc_cogn" placeholder="es. Rossi">
+      </div>
+      <div class="frow">
+        <label for="dc_nasc">Anno di nascita</label>
+        <input type="number" id="dc_nasc" min="1920" max="2000" placeholder="es. 1950">
+      </div>
+    </div>
+
+    <div class="sdiv"></div>
+    <div class="stitle">Relazione con il de cuius</div>
+    <div class="chk-group" style="margin-bottom:4px">
+      <label class="chk-item"><input type="radio" name="rel" value="coniuge" style="accent-color:var(--blue2)">
+        <div><div class="cl">Coniuge / unito civilmente</div></div></label>
+      <label class="chk-item"><input type="radio" name="rel" value="figlio" style="accent-color:var(--blue2)">
+        <div><div class="cl">Figlio / figlia</div><div class="cd">A carico del de cuius al momento del decesso</div></div></label>
+      <label class="chk-item"><input type="radio" name="rel" value="genitore" style="accent-color:var(--blue2)">
+        <div><div class="cl">Genitore</div><div class="cd">In assenza di coniuge e figli aventi diritto</div></div></label>
+      <label class="chk-item"><input type="radio" name="rel" value="altro" style="accent-color:var(--blue2)">
+        <div><div class="cl">Altro familiare</div><div class="cd">Fratelli/sorelle, nipoti — solo in assenza di familiari di grado precedente</div></div></label>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="renderStep0()">← Indietro</button>
+      <button class="btn btn-primary" onclick="submitSuperstiti()">Avanti →</button>
+    </div>`;
+}
+
+function checkCF() {
+  const cf = document.getElementById('dc_cf').value;
+  const hint = document.getElementById('cf_hint');
+  if (cf.length === 16) {
+    hint.textContent = '✓ Codice fiscale completo';
+    hint.style.color = 'var(--ok-bd)';
+  } else {
+    hint.textContent = `${cf.length}/16 caratteri`;
+    hint.style.color = 'var(--muted)';
+  }
+}
+
+function submitSuperstiti() {
+  const cf   = document.getElementById('dc_cf').value.trim();
+  const nome = document.getElementById('dc_nome').value.trim();
+  const cogn = document.getElementById('dc_cogn').value.trim();
+  const nasc = document.getElementById('dc_nasc').value.trim();
+  const rel  = document.querySelector('input[name=rel]:checked')?.value;
+
+  if (!rel) { alert('Seleziona la relazione con il de cuius.'); return; }
+  if (!cf && !(nome && cogn && nasc)) {
+    alert('Inserisci il codice fiscale oppure i dati anagrafici (nome, cognome, anno di nascita) del de cuius.');
+    return;
+  }
+
+  S.profile = { tipo: 'superstiti', cf, nome, cogn, nasc, rel };
+  S.history = []; S.declared = {};
+  setStep(3);
+  document.getElementById('ctitle').textContent = 'Simulazione — Pensione ai Superstiti';
+  showNode('sup_tipo');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PASSO 2 — PROFILO INPS (solo pensione diretta)
+// ═══════════════════════════════════════════════════════════
+function renderStep1() {
+  setStep(1);
+  document.getElementById('ctitle').textContent = 'Profilo contributivo';
+  document.getElementById('cbody').innerHTML = `
+    <div class="infobox">
+      <span style="font-size:16px;flex-shrink:0">🔵</span>
+      <div>In un sistema reale questi dati vengono acquisiti automaticamente al login su MyINPS dagli archivi contributivi. Inseriscili manualmente per la simulazione.</div>
+    </div>
+
+    <div class="stitle">Genere</div>
+    <div class="radio-group" style="margin-bottom:6px">
+      <label class="radio-btn sel" id="lbl_m" onclick="selSesso('m')">
+        <input type="radio" name="sesso" value="m" id="s_m" checked> Uomo
+      </label>
+      <label class="radio-btn" id="lbl_f" onclick="selSesso('f')">
+        <input type="radio" name="sesso" value="f" id="s_f"> Donna
+      </label>
+    </div>
+    <div class="hint" style="margin-bottom:20px">Determina l'accesso a misure riservate alle lavoratrici (opzione donna, L.205/2017, ecc.).</div>
+
+    <div class="stitle">Dati anagrafici e contributivi</div>
+    <div class="fgrid">
+      <div class="frow">
+        <label for="p_eta">Età (anni compiuti)</label>
+        <input type="number" id="p_eta" min="40" max="85" placeholder="es. 63">
+      </div>
+      <div class="frow">
+        <label for="p_anni">Anni di contributi totali</label>
+        <input type="number" id="p_anni" min="0" max="55" placeholder="es. 38">
+      </div>
+      <div class="frow">
+        <label for="p_anno">Anno prima contribuzione</label>
+        <input type="number" id="p_anno" min="1955" max="2015" placeholder="es. 1985">
+        <div class="hint">Ante 1996 → sistema misto</div>
+      </div>
+    </div>
+
+    <div class="sdiv"></div>
+    <div class="stitle">Gestioni previdenziali (rilevate automaticamente da INPS)</div>
+    <div class="chk-group">
+      <label class="chk-item">
+        <input type="checkbox" name="gest" value="fpld" checked>
+        <div><div class="cl">FPLD — Lavoro dipendente privato</div><div class="cd">Gestione AGO — si cumula automaticamente con artigiani/commercianti</div></div>
+      </label>
+      <label class="chk-item">
+        <input type="checkbox" name="gest" value="gs">
+        <div><div class="cl">Gestione Separata INPS</div><div class="cd">Collaborazioni, parasubordinati, liberi professionisti senza Cassa</div></div>
+      </label>
+      <label class="chk-item">
+        <input type="checkbox" name="gest" value="inpdap">
+        <div><div class="cl">Ex-INPDAP (dipendenti pubblici) / Ex-ENPALS</div><div class="cd">Forma esclusiva o esonerativa dall'AGO</div></div>
+      </label>
+      <label class="chk-item">
+        <input type="checkbox" name="gest" value="cassa">
+        <div><div class="cl">Cassa professionale privata</div><div class="cd">Cassa Forense, ENPAM, Inarcassa, Cassa Dottori Commercialisti…</div></div>
+      </label>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="renderStep0()">← Indietro</button>
+      <button class="btn btn-primary" onclick="submitStep1()">Avanti →</button>
+    </div>`;
+}
+
+function selSesso(v) {
+  document.getElementById('s_m').checked = v==='m';
+  document.getElementById('s_f').checked = v==='f';
+  document.getElementById('lbl_m').className = 'radio-btn'+(v==='m'?' sel':'');
+  document.getElementById('lbl_f').className = 'radio-btn'+(v==='f'?' sel':'');
+}
+
+function submitStep1() {
+  const eta  = parseInt(document.getElementById('p_eta').value) || 0;
+  const anni = parseInt(document.getElementById('p_anni').value) || 0;
+  const anno = parseInt(document.getElementById('p_anno').value) || 0;
+  if (!eta || !anni || !anno) {
+    alert('Compila tutti i campi (età, anni di contributi, anno prima contribuzione) prima di proseguire.');
+    return;
+  }
+  S.profile = {
+    tipo:  'diretta',
+    sesso: document.querySelector('input[name=sesso]:checked')?.value || 'm',
+    eta, anni, annoInizio: anno,
+    gests: Array.from(document.querySelectorAll('input[name=gest]:checked')).map(e=>e.value),
+  };
+  renderStep2();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PASSO 3 — DICHIARAZIONI CITTADINO (con filtro dal profilo)
+// ═══════════════════════════════════════════════════════════
+function renderStep2() {
+  setStep(2);
+  document.getElementById('ctitle').textContent = 'Situazioni da dichiarare';
+  const { p2 } = calcElig(S.profile, {});
+  const sesso  = S.profile.sesso;
+
+  function chkItem(value, label, desc, ekKey) {
+    const e   = p2[ekKey] || { ok: true, why: null };
+    const dis = !e.ok;
+    return `<label class="chk-item${dis?' dis':''}">
+      <input type="checkbox" name="decl" value="${value}" ${dis?'disabled':''}>
+      <div>
+        <div class="cl">${label}</div>
+        ${desc ? `<div class="cd">${desc}</div>` : ''}
+        ${dis && e.why ? `<div class="dis-why">🚫 ${e.why}</div>` : ''}
+      </div>
+    </label>`;
+  }
+
+  const donnaRow = sesso === 'f'
+    ? chkItem('donna','👩 Opzione donna — diritto maturato entro il 31/12/2025',
+        'Requisiti base: 59 anni al 31/12/2025 + 35 anni di contributi. Ricalcolo interamente contributivo.','donna')
+    : '';
+
+  document.getElementById('cbody').innerHTML = `
+    <div class="infobox-warn">
+      <span style="font-size:16px;flex-shrink:0">🟠</span>
+      <div>Queste situazioni non sono deducibili dagli archivi INPS: dipendono da accordi aziendali, certificazioni esterne o scelte personali. <strong>Le opzioni incompatibili con il tuo profilo sono già disabilitate con la motivazione.</strong></div>
+    </div>
+
+    <div class="stitle">Misure con diritto acquisito entro una data</div>
+    <div class="hint" style="margin-bottom:12px">Seleziona solo se hai effettivamente maturato il diritto entro la data indicata. Le opzioni sono disabilitate se le condizioni anagrafiche stimate non sono soddisfatte.</div>
+    <div class="chk-group" style="margin-bottom:22px">
+      ${chkItem('q100','Quota 100 — diritto maturato entro il 31/12/2021','62 anni + 38 anni di contributi al 31/12/2021.','q100')}
+      ${chkItem('q102','Quota 102 — diritto maturato entro il 31/12/2022','64 anni + 38 anni di contributi al 31/12/2022.','q102')}
+      ${chkItem('q103','Quota 103 / Pensione flessibile — diritto maturato entro il 31/12/2025','62 anni + 41 anni di contributi al 31/12/2025.','q103')}
+      ${donnaRow}
+    </div>
+
+    <div class="sdiv"></div>
+    <div class="stitle">Situazioni speciali che modificano i requisiti</div>
+    <div class="chk-group" style="margin-bottom:22px">
+      ${chkItem('gravosi','Lavori gravosi o usuranti (D.Lgs.67/2011)','Mansioni faticose o pesanti riconosciute dalla normativa.','gravosi')}
+      ${chkItem('salvaguardia','Appartenenza a platea di salvaguardia esodati','L.232/2016 o L.178/2020 — verificare l\'iscrizione alla platea specifica.','salvaguardia')}
+      ${chkItem('amianto','Esposizione ad amianto per oltre 10 anni','Richiede certificazione INAIL (L.208/2015).','amianto')}
+      ${chkItem('precoce','Lavoratore precoce (L.232/2016)','Almeno 1 anno di contributi ante 19 anni + categoria tutelata.','precoce')}
+      ${chkItem('pa','Accordo di esubero nella Pubblica Amministrazione','Accordo aziendale PA in corso di validità.','pa')}
+      ${chkItem('editoria','Accordo di prepensionamento nel settore editoria','L.416/1981 o L.160/2019 — accordo sindacale aziendale validato.','editoria')}
+      ${chkItem('vittima','Vittima di crimine o terrorismo (L.206/2004)','Richiede il riconoscimento preventivo dello status di vittima.','vittima')}
+    </div>
+
+    <div class="sdiv"></div>
+    <div class="stitle">Contributi esteri e altre condizioni</div>
+    <div class="chk-group">
+      ${chkItem('esteri','Periodi di lavoro all\'estero (UE, SEE o paesi con convenzione bilaterale)','La documentazione contributiva estera è a carico del lavoratore — INPS non ha accesso diretto agli archivi esteri.','esteri')}
+      ${chkItem('invalido','Riduzione della capacità lavorativa (invalidità o inabilità riconosciuta)','AOI, pensione di inabilità o vecchio ordinamento.','invalido')}
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="renderStep1()">← Indietro</button>
+      <button class="btn btn-primary" onclick="submitStep2()">Avvia simulazione →</button>
+    </div>`;
+}
+
+function submitStep2() {
+  const checked = Array.from(document.querySelectorAll('input[name=decl]:checked')).map(e=>e.value);
+  S.declared = {};
+  checked.forEach(v => { S.declared[v] = true; });
+  S.history = []; S.current = null;
+  document.getElementById('ctitle').textContent = 'Simulazione di indirizzamento';
+  setStep(3);
+  showNode('start_diretta');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ALBERO WIZARD
+// ═══════════════════════════════════════════════════════════
+const NODES = {
+  // Nodo di ingresso pensione DIRETTA (salta il ramo superstiti)
+  start_diretta:{type:"question",label:"Quale tipo di pensione diretta?",sub:"Il sistema ha pre-filtrato le opzioni in base al tuo profilo.",opts:[
+    {key:"anz",ek:"anz",icon:"⏳",bg:"#E3F2FD",label:"Anzianità / Anticipata",desc:"Requisiti contributivi maturati prima dell'età di vecchiaia.",next:"gest_anz"},
+    {key:"vec",ek:"vec",icon:"🗓️",bg:"#E8F5E9",label:"Vecchiaia",desc:"67 anni o requisito anticipato nel sistema contributivo puro.",next:"gest_vec"},
+    {key:"inv",ek:"inv",icon:"🏥",bg:"#FFF8E1",label:"Invalidità / Inabilità / Assegno",desc:"Riduzione della capacità lavorativa o inabilità assoluta.",next:"inv_tipo"},
+  ]},
+
+  gest_anz:{type:"auto",label:"Composizione della posizione contributiva",autoText:"INPS rileva automaticamente le gestioni dagli archivi.",opts:[
+    {key:"solo_ago",ek:"solo_ago",icon:"1️⃣",bg:"#E3F2FD",label:"Solo gestioni AGO",desc:"FPLD, artigiani, commercianti, agricoli.",next:"regime_anz"},
+    {key:"ago_gs",  ek:"ago_gs",  icon:"🔀",bg:"#E3F2FD",label:"AGO + Gestione Separata INPS",next:"racc_gs_anz"},
+    {key:"ago_excl",ek:"ago_excl",icon:"🏛️",bg:"#E3F2FD",label:"AGO + forma esclusiva/esonerativa",desc:"Ex-INPDAP, Ex-ENPALS.",next:"racc_ex_anz"},
+    {key:"cassa",   ek:"cassa",   icon:"⚖️",bg:"#E3F2FD",label:"Include Cassa professionale privata",next:"r_totalizzazione"},
+    {key:"esteri",  ek:"esteri",  icon:"🌍",bg:"#FFF3E0",label:"Include periodi di lavoro all'estero (dichiarati)",next:"esteri_q"},
+  ]},
+  gest_vec:{type:"auto",label:"Composizione della posizione contributiva",autoText:"INPS rileva automaticamente.",opts:[
+    {key:"solo_ago",ek:"solo_ago",icon:"1️⃣",bg:"#E3F2FD",label:"Solo gestioni AGO",next:"vec_spec"},
+    {key:"ago_gs",  ek:"ago_gs",  icon:"🔀",bg:"#E3F2FD",label:"AGO + Gestione Separata INPS",next:"racc_gs_vec"},
+    {key:"ago_excl",ek:"ago_excl",icon:"🏛️",bg:"#E3F2FD",label:"AGO + forma esclusiva/esonerativa",next:"racc_ex_vec"},
+    {key:"cassa",   ek:"cassa",   icon:"⚖️",bg:"#E3F2FD",label:"Include Cassa professionale privata",next:"r_totalizzazione_vec"},
+    {key:"esteri",  ek:"esteri",  icon:"🌍",bg:"#FFF3E0",label:"Include periodi di lavoro all'estero (dichiarati)",next:"esteri_q"},
+  ]},
+  racc_gs_anz:{type:"question",label:"Come raccordare AGO e Gestione Separata?",sub:"Il computo DM282 porta a calcolo interamente contributivo — simulare prima.",opts:[
+    {key:"dm282",   ek:"dm282",   icon:"🔄",bg:"#FFF8E1",label:"Computo D.M.282/1996",desc:"Calcolo interamente contributivo (Ti45).",next:"r_dm282_anz"},
+    {key:"una_gest",ek:"una_gest",icon:"1️⃣",bg:"#E8F5E9",label:"Domanda su una sola gestione",next:"regime_anz"},
+  ]},
+  racc_gs_vec:{type:"question",label:"Come raccordare AGO e Gestione Separata?",opts:[
+    {key:"dm282",   ek:"dm282",   icon:"🔄",bg:"#FFF8E1",label:"Computo D.M.282/1996",desc:"Calcolo interamente contributivo (Ti45).",next:"r_dm282_vec"},
+    {key:"una_gest",ek:"una_gest",icon:"1️⃣",bg:"#E8F5E9",label:"Domanda su una sola gestione",next:"vec_spec"},
+  ]},
+  racc_ex_anz:{type:"question",label:"Come raccordare AGO e forma esclusiva/esonerativa?",sub:"Il sistema informa anche sulla ricongiunzione L.45/1990.",opts:[
+    {key:"cumulo",  ek:"cumulo",  icon:"➕",bg:"#E8F5E9",label:"Cumulo contributivo (L.228/2012)",desc:"Pro-quota per gestione, non penalizza l'importo.",next:"regime_anz"},
+    {key:"totaliz", ek:"totaliz", icon:"🔢",bg:"#FFF8E1",label:"Totalizzazione (D.Lgs.42/2006)",desc:"Calcolo interamente contributivo.",next:"r_totalizzazione"},
+    {key:"una_gest",ek:"una_gest",icon:"1️⃣",bg:"#E8F5E9",label:"Domanda su una sola gestione",next:"regime_anz"},
+  ]},
+  racc_ex_vec:{type:"question",label:"Come raccordare AGO e forma esclusiva/esonerativa?",opts:[
+    {key:"cumulo",  ek:"cumulo",  icon:"➕",bg:"#E8F5E9",label:"Cumulo (L.228/2012)",desc:"Non penalizza l'importo.",next:"vec_spec"},
+    {key:"totaliz", ek:"totaliz", icon:"🔢",bg:"#FFF8E1",label:"Totalizzazione (D.Lgs.42/2006)",desc:"Calcolo contributivo — req. 65a + 20aa totali.",next:"r_totalizzazione_vec"},
+    {key:"una_gest",ek:"una_gest",icon:"1️⃣",bg:"#E8F5E9",label:"Domanda su una sola gestione",next:"vec_spec"},
+  ]},
+  esteri_q:{type:"question",label:"Hai già la documentazione contributiva dell'ente estero?",sub:"L'INPS non ha accesso agli archivi previdenziali esteri: la documentazione è a carico del lavoratore.",opts:[
+    {key:"si", icon:"✅",bg:"#E8F5E9",label:"Sì, ho il prospetto contributivo estero",next:"r_tot_int"},
+    {key:"no", icon:"📋",bg:"#FFEBEE",label:"No, devo richiederla all'ente estero",desc:"Es. CNAV (Francia), DRV (Germania).",next:"r_blocco_est"},
+    {key:"nso",icon:"❓",bg:"#FFF8E1",label:"Non sono sicuro / periodi brevi",next:"r_verifica_est"},
+  ]},
+  regime_anz:{type:"auto",label:"Regime di calcolo applicabile",autoText:"INPS determina il sistema dalla data della prima contribuzione.",opts:[
+    {key:"misto",ek:"misto",icon:"📅",bg:"#E3F2FD",label:"Sistema misto (prima contribuzione ante 1°/1/1996)",desc:"Quota retributiva ante-96 + quota contributiva post-96.",next:"spec_anz"},
+    {key:"puro", ek:"puro", icon:"🆕",bg:"#E3F2FD",label:"Sistema contributivo puro (dal 1°/1/1996)",next:"cp_anz"},
+  ]},
+  spec_anz:{type:"question",label:"Hai una condizione speciale che modifica i requisiti?",sub:"Le condizioni non dichiarate o incompatibili con il profilo sono disabilitate.",opts:[
+    {key:"gravosi", ek:"gravosi", icon:"👷",bg:"#FFF3E0",label:"Lavori gravosi o usuranti (D.Lgs.67/2011)",next:"r_gravosi"},
+    {key:"salv1",   ek:"salv1",  icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia L.232/2016 (WebDOM ✓ · Patronato —)",next:"r_salv_232"},
+    {key:"salv2",   ek:"salv2",  icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia L.178/2020",next:"r_salv_178_anz"},
+    {key:"amianto", ek:"amianto",icon:"☢️",bg:"#FFF3E0",label:"Esposizione amianto L.208/2015",next:"r_amianto"},
+    {key:"pa",      ek:"pa",     icon:"🏛️",bg:"#E8F5E9",label:"Esubero PA",next:"r_esuberi_pa"},
+    {key:"vittima", ek:"vittima",icon:"🏳️",bg:"#FFEBEE",label:"Vittima di crimine/terrorismo L.206/2004",next:"r_vittime_anz"},
+    {key:"precoce", ek:"precoce",icon:"🧑‍🔧",bg:"#E8F5E9",label:"Lavoratore precoce L.232/2016 (solo patronato)",next:"r_precoce"},
+    {key:"editoria",ek:"editoria",icon:"📰",bg:"#E8F5E9",label:"Prepensionamento editoria",next:"r_editoria"},
+    {key:"opzc",    ek:"opzc",   icon:"🔢",bg:"#FFF8E1",label:"Opzione al sistema contributivo (lavoratrice)",next:"r_opz_contrib_anz"},
+    {key:"nessuna", ek:"nessuna",icon:"✅",bg:"#E8F5E9",label:"Nessuna condizione speciale — percorso standard",next:"std_anz"},
+  ]},
+  std_anz:{type:"question",label:"Quale misura anticipata?",sub:"Le misure con diritto acquisito sono disponibili solo se dichiarate nel passo precedente.",opts:[
+    {key:"ord",  ek:"ord",  icon:"📅",bg:"#E8F5E9",label:"Pensione anticipata ordinaria",desc:"42a+10m uomini / 41a+10m donne.",next:"r_anticipata"},
+    {key:"q100", ek:"q100", icon:"🔢",bg:"#FFF8E1",label:"Quota 100 — diritto maturato entro 31/12/2021",desc:"62 anni + 38 anni contributi.",next:"r_quota100"},
+    {key:"q102", ek:"q102", icon:"🔢",bg:"#FFF8E1",label:"Quota 102 — diritto maturato entro 31/12/2022",desc:"64 anni + 38 anni contributi.",next:"r_quota102"},
+    {key:"q103", ek:"q103", icon:"🔄",bg:"#FFF8E1",label:"Pensione flessibile (Quota 103) — diritto entro 31/12/2025",desc:"62 anni + 41 anni contributi.",next:"r_flessibile"},
+    {key:"donna",ek:"donna",icon:"👩",bg:"#FCE4EC",label:"Opzione donna — diritto maturato entro 31/12/2025",desc:"Min. 59 anni + 35 anni contributi al 31/12/2025.",next:"r_opz_donna"},
+  ]},
+  cp_anz:{type:"auto",label:"Verifica soglia assegno — sistema contributivo puro",autoText:"INPS calcola se l'assegno supera la soglia di accesso anticipato.",opts:[
+    {key:"ok64",ek:"ok64",icon:"✅",bg:"#E8F5E9",label:"Assegno ≥ 2,8× assegno sociale (≈€1.603/mese 2025) — accesso a 64 anni",next:"r_contrib_64"},
+    {key:"no64",ek:"no64",icon:"⚠️",bg:"#FFF8E1",label:"Meno di 20 anni di contributi o assegno sotto soglia — vecchiaia a 70 anni",next:"r_contrib_70"},
+    {key:"opz", ek:"opz", icon:"👩‍💼",bg:"#FCE4EC",label:"Lavoratrice: opzione al contributivo",next:"r_opz_contrib_anz"},
+  ]},
+  vec_spec:{type:"question",label:"Situazione speciale per la vecchiaia?",opts:[
+    {key:"std",    ek:"std_vec",  icon:"✅",bg:"#E8F5E9",label:"Standard: 67 anni + 20 anni contributi",next:"r_vecchiaia"},
+    {key:"cp64",   ek:"cp64_vec", icon:"🆕",bg:"#E8F5E9",label:"Contributivo puro — anticipata 64 anni",desc:"Assegno ≥ 2,8× assegno sociale.",next:"r_contrib_64_vec"},
+    {key:"opzc",   ek:"opzc_vec", icon:"🔢",bg:"#FFF8E1",label:"Opzione al contributivo (lavoratrice)",next:"r_opz_contrib_vec"},
+    {key:"suppl",  ek:"suppl_vec",icon:"🔄",bg:"#E8F5E9",label:"Pensione supplementare di vecchiaia",desc:"Dopo la pensione principale.",next:"r_supplementare"},
+    {key:"tr_aoi", ek:"tr_aoi",   icon:"🏥",bg:"#F5F5F5",label:"Trasformazione da AOI",next:"r_trasf_aoi"},
+    {key:"tr_inv", ek:"tr_inv",   icon:"🏥",bg:"#F5F5F5",label:"Trasformazione da pensione di invalidità",next:"r_trasf_inv"},
+    {key:"deroga", ek:"deroga",   icon:"🏛️",bg:"#F5F5F5",label:"Vecchiaia in deroga (ante-L.335/1995)",next:"r_deroga"},
+    {key:"salv",   ek:"salv_vec", icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia vecchiaia L.178/2020",next:"r_salv_178_vec"},
+    {key:"l205",   ek:"l205_vec", icon:"👩",bg:"#FCE4EC",label:"Requisito anticipato L.205/2017 (lavoratrici — solo patronato)",next:"r_vec_l205"},
+    {key:"vit",    ek:"vit_vec",  icon:"🏳️",bg:"#FFEBEE",label:"Benefici L.206/2004 (vittime di crimine/terrorismo)",next:"r_vittime_vec"},
+    {key:"am",     ek:"am_vec",   icon:"☢️",bg:"#FFF3E0",label:"Maggiorazione amianto L.208/2015 (solo patronato)",next:"r_amianto_vec"},
+    {key:"est",    ek:"est_vec",  icon:"🌍",bg:"#FFF3E0",label:"Totalizzazione internazionale (contributi esteri dichiarati)",next:"esteri_q"},
+  ]},
+  inv_tipo:{type:"question",label:"Di quale prestazione hai bisogno?",opts:[
+    {key:"aoi", icon:"⬇️",bg:"#FFF8E1",label:"Assegno ordinario di invalidità (AOI)",desc:"Capacità ridotta ≥ 2/3 — reversibile.",next:"inv_aoi_ctx"},
+    {key:"inab",icon:"🚫",bg:"#FFEBEE",label:"Pensione di inabilità assoluta",next:"inv_inab_ctx"},
+    {key:"old", icon:"🏛️",bg:"#F5F5F5",label:"Pensione di invalidità (vecchio ordinamento pre-L.222/1984)",next:"r_inv_old"},
+  ]},
+  inv_aoi_ctx:{type:"auto",label:"Contesto gestione per l'AOI",autoText:"INPS rileva la gestione.",opts:[
+    {key:"ord", icon:"💼",bg:"#E3F2FD",label:"Gestione ordinaria",next:"r_aoi"},
+    {key:"priv",icon:"⚖️",bg:"#E3F2FD",label:"Categoria privilegiata (forze ordine, militari, invalidi di guerra)",next:"r_aoi_priv"},
+    {key:"dm",  ek:"dm282",icon:"🔄",bg:"#FFF8E1",label:"AGO + Gestione Separata → computo D.M.282/1996",next:"r_aoi_dm"},
+    {key:"114", icon:"🏛️",bg:"#F5F5F5",label:"Posizione storica art.2/ter L.114/74",next:"r_aoi_114"},
+  ]},
+  inv_inab_ctx:{type:"auto",label:"Contesto gestione per l'inabilità",autoText:"INPS rileva la gestione.",opts:[
+    {key:"ord",  icon:"💼",bg:"#E3F2FD",label:"Settore privato / autonomi",next:"r_inab_ord"},
+    {key:"priv", icon:"⚖️",bg:"#E3F2FD",label:"Categoria privilegiata",next:"r_inab_priv"},
+    {key:"nav",  icon:"⚓",bg:"#E3F2FD",label:"Navigazione marittima",next:"r_inab_nav"},
+    {key:"gp46", ek:"gp46",icon:"🏛️",bg:"#E3F2FD",label:"Gestione pubblica — privilegio (ex-INPDAP)",next:"r_inab_gp46"},
+    {key:"gp47", ek:"gp47",icon:"🏛️",bg:"#E3F2FD",label:"Gestione pubblica — proficuo lavoro (ex-INPDAP)",next:"r_inab_gp47"},
+    {key:"cp335",ek:"puro", icon:"🆕",bg:"#E3F2FD",label:"Contributivo puro — L.335/1995",next:"r_inab_335"},
+    {key:"cp232",ek:"puro", icon:"🆕",bg:"#E3F2FD",label:"Contributivo puro — L.232/2016",next:"r_inab_232"},
+    {key:"dm",   ek:"dm282",icon:"🔄",bg:"#FFF8E1",label:"AGO + GS → computo D.M.282/1996",next:"r_inab_dm"},
+  ]},
+  sup_tipo:{type:"question",label:"Qual è la tua posizione rispetto al de cuius?",opts:[
+    {key:"rev",    icon:"💔",bg:"#FCE4EC",label:"Pensionato deceduto → reversibilità",next:"sup_rev_tipo"},
+    {key:"ind",    icon:"💼",bg:"#E3F2FD",label:"Lavoratore deceduto → pensione indiretta",next:"sup_ind_tipo"},
+    {key:"mar",    icon:"⚓",bg:"#F5F5F5",label:"Marittimo scomparso in mare",next:"r_marittimo"},
+    {key:"tantum", icon:"💰",bg:"#E8F5E9",label:"Indennità una tantum",desc:"Contribuzione insufficiente per la pensione indiretta.",next:"r_tantum"},
+  ]},
+  sup_rev_tipo:{type:"question",label:"Tipo di reversibilità",opts:[
+    {key:"ord",  icon:"💔",bg:"#FCE4EC",label:"Reversibilità ordinaria",next:"r_rev_ord"},
+    {key:"suppl",icon:"🔄",bg:"#E8F5E9",label:"Reversibilità supplementare (posizione secondaria del de cuius)",next:"r_rev_suppl"},
+    {key:"nm",   icon:"📜",bg:"#F5F5F5",label:"Gestione storica non meccanizzata",next:"r_rev_nm"},
+  ]},
+  sup_ind_tipo:{type:"question",label:"Tipo di pensione indiretta",opts:[
+    {key:"ord",  icon:"💼",bg:"#E3F2FD",label:"Indiretta ordinaria",next:"r_ind_ord"},
+    {key:"priv", icon:"⚖️",bg:"#E3F2FD",label:"Indiretta privilegiata (militari, forze dell'ordine)",next:"r_ind_priv"},
+    {key:"suppl",icon:"🔄",bg:"#E8F5E9",label:"Indiretta supplementare (posizione secondaria)",next:"r_ind_suppl"},
+    {key:"gp",   ek:"ind_gp",icon:"🏛️",bg:"#E3F2FD",label:"Indiretta Gestione Pubblica (ex-INPDAP)",next:"r_ind_gp"},
+    {key:"dm",   ek:"dm282",icon:"🔄",bg:"#FFF8E1",label:"De cuius: AGO + GS → computo D.M.282/1996",next:"r_ind_dm"},
+    {key:"nm",   icon:"📜",bg:"#F5F5F5",label:"Gestione storica non meccanizzata",next:"r_ind_nm"},
+  ]},
+
+  // RISULTATI
+  r_anticipata:{type:"result",rtype:"ok",  icon:"✅",tag:"Anzianità/Anticipata",title:"Pensione di anzianità / anticipata",cod:"Gr1·Pr1·Ti1",web:true,pat:true,desc:"Accesso per anzianità contributiva pura: 42a+10m uomini, 41a+10m donne (2024)."},
+  r_quota100:  {type:"result",rtype:"warn",icon:"⚠️",tag:"Diritto acquisito",title:"Pensione anticipata — Quota 100",cod:"Gr1·Pr1·Ti174",web:true,pat:true,callout:"Presentabile solo se i requisiti (62a+38aa) erano maturati entro il 31/12/2021."},
+  r_quota102:  {type:"result",rtype:"warn",icon:"⚠️",tag:"Diritto acquisito",title:"Pensione anticipata — Quota 102",cod:"Gr1·Pr1·Ti185",web:true,pat:true,callout:"Presentabile solo se i requisiti (64a+38aa) erano maturati entro il 31/12/2022."},
+  r_flessibile:{type:"result",rtype:"warn",icon:"🔄",tag:"Vigente/diritto acquisito",title:"Pensione anticipata flessibile — Quota 103",cod:"Gr1·Pr1·Ti189/195/201/202",web:true,pat:true,callout:"Diritto maturato entro 31/12/2025. Varianti con opzione contributivo (Ti195/202): simulare l'impatto sull'assegno prima di scegliere."},
+  r_opz_donna: {type:"result",rtype:"warn",icon:"👩",tag:"Opzione donna",title:"Pensione anticipata — opzione donna",cod:"Gr1·Pr1·Ti176/Ti190",web:true,pat:true,callout:"Ricalcolo interamente contributivo: può ridurre significativamente l'assegno. Simulare prima. Benefici maternità: −1 anno/figlio (max 2)."},
+  r_gravosi:   {type:"result",rtype:"ok",  icon:"👷",tag:"Lavori gravosi",title:"Pensione anticipata — lavori faticosi e pesanti",cod:"Gr1·Pr1·Ti140",web:true,pat:true,desc:"D.Lgs.67/2011 — autocertificazione e verifica INPS."},
+  r_salv_232:  {type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia",title:"Pensione anticipata — Salvaguardia L.232/2016",cod:"Gr1·Pr1·Ti165",web:true,pat:false,callout:"Platea chiusa. INPS verifica l'appartenenza. Le sei platee precedenti sono solo operatori INPS."},
+  r_salv_178_anz:{type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia",title:"Pensione anticipata — Salvaguardia L.178/2020",cod:"Gr1·Pr1·Ti181",web:true,pat:true,callout:"Platea chiusa: INPS verifica l'appartenenza."},
+  r_amianto:   {type:"result",rtype:"ok",  icon:"☢️",tag:"Esposizione amianto",title:"Pensione anticipata con maggiorazione amianto",cod:"Gr1·Pr1·Ti161",web:true,pat:true,callout:"Richiede certificazione INAIL (esposizione >10 anni, L.208/2015)."},
+  r_esuberi_pa:{type:"result",rtype:"ok",  icon:"🏛️",tag:"Esuberi PA",title:"Pensione anticipata — esuberi nella PA",cod:"Gr1·Pr1·Ti147",web:true,pat:true,desc:"La L.122 Mobilità (Ti42) è solo operatori INPS."},
+  r_vittime_anz:{type:"result",rtype:"ok", icon:"🏳️",tag:"L.206/2004",title:"Pensione anticipata — vittime di terrorismo e crimini",cod:"Gr1·Pr1·Ti158/Ti159",web:true,pat:true,callout:"Richiede il preventivo riconoscimento dello status di vittima."},
+  r_precoce:   {type:"result",rtype:"ok",  icon:"🧑‍🔧",tag:"Lavoratori precoci",title:"Pensione anticipata — lavoratore precoce L.232/2016",cod:"Gr1·Pr1·Ti51",web:false,pat:true,callout:"Solo patronato. 41aa + 12 mesi ante-19 anni + categoria tutelata."},
+  r_editoria:  {type:"result",rtype:"ok",  icon:"📰",tag:"Editoria",title:"Prepensionamento editoria",cod:"Gr1·Pr1·Ti162/Ti179",web:true,pat:true,callout:"Richiede accordo sindacale aziendale validato."},
+  r_opz_contrib_anz:{type:"result",rtype:"warn",icon:"🔢",tag:"Opzione contributivo",title:"Pensione anticipata con opzione al sistema contributivo",cod:"Gr1·Pr1·Ti30",web:true,pat:true,callout:"Ricalcolo su tutta la carriera: può penalizzare l'importo. Simulare prima."},
+  r_dm282_anz: {type:"result",rtype:"warn",icon:"🔄",tag:"Computo GS — anticipata",title:"Pensione anticipata con computo D.M.282/1996",cod:"Gr1·Pr1·Ti45",web:true,pat:true,callout:"Calcolo interamente contributivo — irreversibile. Simulare prima."},
+  r_totalizzazione:{type:"result",rtype:"warn",icon:"🔢",tag:"Totalizzazione",title:"Pensione in totalizzazione (D.Lgs.42/2006)",cod:"Gestione capofila",web:true,pat:true,callout:"Calcolo interamente contributivo. Può penalizzare se hai contributi ante-1996. Confrontare con il cumulo."},
+  r_contrib_64:{type:"result",rtype:"ok",  icon:"🆕",tag:"Contributivo puro",title:"Pensione di vecchiaia anticipata a 64 anni",cod:"Gr1·Pr2·Ti8",web:true,pat:true,callout:"Assegno ≥ 2,8× assegno sociale: verificare con simulatore INPS."},
+  r_contrib_70:{type:"result",rtype:"ok",  icon:"🆕",tag:"Contributivo puro",title:"Pensione di vecchiaia a 70 anni",cod:"Gr1·Pr2·Ti17",web:true,pat:true,desc:"70 anni + 5 anni effettivi, senza soglia."},
+  r_vecchiaia: {type:"result",rtype:"ok",  icon:"🗓️",tag:"Vecchiaia",title:"Pensione di vecchiaia ordinaria",cod:"Gr1·Pr2·Ti1",web:true,pat:true,desc:"67 anni + 20 anni contributi (misto) oppure 67 anni + 5 anni effettivi (contributivo puro)."},
+  r_contrib_64_vec:{type:"result",rtype:"ok",icon:"🆕",tag:"Vecchiaia anticipata",title:"Pensione vecchiaia anticipata 64 anni (contributivo puro)",cod:"Gr1·Pr2·Ti8",web:true,pat:true,callout:"Assegno ≥ 2,8× assegno sociale: verificare con simulatore."},
+  r_opz_contrib_vec:{type:"result",rtype:"warn",icon:"🔢",tag:"Opzione contributivo",title:"Pensione di vecchiaia con opzione al contributivo",cod:"Gr1·Pr2·Ti30",web:true,pat:true,callout:"Ricalcolo contributivo: simulare prima."},
+  r_supplementare:{type:"result",rtype:"ok",icon:"🔄",tag:"Supplementare",title:"Pensione supplementare di vecchiaia",cod:"Gr1·Pr2·Ti9/Ti192",web:true,pat:true,desc:"Da presentare dopo la pensione principale."},
+  r_trasf_aoi: {type:"result",rtype:"ok",  icon:"🏥",tag:"Trasformazione",title:"Vecchiaia — trasformazione da AOI",cod:"Gr1·Pr2·Ti2",web:true,pat:true,desc:"Automatica al raggiungimento dell'età pensionabile."},
+  r_trasf_inv: {type:"result",rtype:"ok",  icon:"🏥",tag:"Trasformazione",title:"Vecchiaia — trasformazione da pensione di invalidità",cod:"Gr1·Pr2·Ti3",web:true,pat:true,desc:"Pratica storica residuale."},
+  r_deroga:    {type:"result",rtype:"ok",  icon:"🏛️",tag:"Vecchiaia in deroga",title:"Pensione di vecchiaia in deroga",cod:"Gr1·Pr2·Ti43",web:true,pat:true,desc:"Posizioni ante-L.335/1995."},
+  r_salv_178_vec:{type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia vecchiaia",title:"Vecchiaia — Salvaguardia L.178/2020",cod:"Gr1·Pr2·Ti181",web:true,pat:true,callout:"Unica platea vecchiaia nel perimetro cit./patronato."},
+  r_vec_l205:  {type:"result",rtype:"ok",  icon:"👩",tag:"Vecchiaia lavoratrici",title:"Vecchiaia — requisito anticipato L.205/2017",cod:"Gr1·Pr2·Ti172/Ti173",web:false,pat:true,callout:"Solo patronato. Ti173 include opzione contributivo: simulare prima."},
+  r_vittime_vec:{type:"result",rtype:"ok", icon:"🏳️",tag:"L.206/2004 vecchiaia",title:"Vecchiaia — benefici L.206/2004",cod:"Gr1·Pr2·Ti159",web:true,pat:true,callout:"Richiede riconoscimento status vittima."},
+  r_amianto_vec:{type:"result",rtype:"ok", icon:"☢️",tag:"Amianto vecchiaia",title:"Vecchiaia con maggiorazione amianto",cod:"Gr1·Pr2·Ti161",web:false,pat:true,callout:"Solo patronato. Richiede certificazione INAIL."},
+  r_dm282_vec: {type:"result",rtype:"warn",icon:"🔄",tag:"Computo GS — vecchiaia",title:"Vecchiaia con computo D.M.282/1996",cod:"Gr1·Pr2·Ti45",web:true,pat:true,callout:"Calcolo definitivamente contributivo. Simulare prima."},
+  r_totalizzazione_vec:{type:"result",rtype:"warn",icon:"🔢",tag:"Totalizzazione vecchiaia",title:"Vecchiaia in totalizzazione",cod:"Gestione capofila",web:true,pat:true,callout:"Calcolo contributivo — req. 65 anni + 20 anni totali."},
+  r_tot_int:   {type:"result",rtype:"ok",  icon:"🌍",tag:"Totalizzazione internaz.",title:"Pensione con totalizzazione internazionale",cod:"Ti77",web:true,pat:true,callout:"Allegare il prospetto dell'ente estero. Tempi: 12-24 mesi."},
+  r_blocco_est:{type:"result",rtype:"block",icon:"🚫",tag:"Azione preventiva",title:"Richiedere il prospetto estero prima di procedere",cod:"—",web:false,pat:true,callout:"Contattare l'ente estero (CNAV, DRV, ecc.). Tempi: 1-6 mesi."},
+  r_verifica_est:{type:"result",rtype:"warn",icon:"❓",tag:"Verifica preliminare",title:"Verificare la posizione estera prima di procedere",cod:"—",web:false,pat:true,callout:"Anche pochi mesi all'estero possono essere rilevanti. Consulta il patronato."},
+  r_aoi:       {type:"result",rtype:"ok",  icon:"⬇️",tag:"Invalidità",title:"Assegno ordinario di invalidità (AOI)",cod:"Gr2·Pr11·Ti1",web:true,pat:true,desc:"Capacità ridotta ≥ 2/3 — reversibile, revisione ogni 3 anni."},
+  r_aoi_priv:  {type:"result",rtype:"ok",  icon:"⚖️",tag:"AOI privilegiata",title:"Assegno privilegiato di invalidità",cod:"Gr2·Pr11·Ti5",web:true,pat:true,desc:"Forze dell'ordine, militari, invalidi di guerra."},
+  r_aoi_dm:    {type:"result",rtype:"warn",icon:"🔄",tag:"AOI+computo GS",title:"AOI con computo D.M.282/1996",cod:"Gr2·Pr11·Ti45",web:true,pat:true,callout:"Calcolo definitivamente contributivo."},
+  r_aoi_114:   {type:"result",rtype:"ok",  icon:"🏛️",tag:"AOI storica",title:"AOI art.2/ter L.114/74",cod:"Gr2·Pr11·Ti4",web:true,pat:true,desc:"Pratica storica residuale."},
+  r_inab_ord:  {type:"result",rtype:"ok",  icon:"🚫",tag:"Inabilità",title:"Pensione ordinaria di inabilità",cod:"Gr2·Pr12·Ti1",web:true,pat:true,desc:"Inabilità assoluta e permanente. Visita collegiale INPS."},
+  r_inab_priv: {type:"result",rtype:"ok",  icon:"⚖️",tag:"Inabilità privilegiata",title:"Pensione privilegiata di inabilità",cod:"Gr2·Pr12·Ti5",web:true,pat:true,desc:""},
+  r_inab_nav:  {type:"result",rtype:"ok",  icon:"⚓",tag:"Inabilità navigazione",title:"Pensione di inabilità alla navigazione",cod:"Gr2·Pr12·Ti10",web:true,pat:true,desc:"Lavoratori marittimi."},
+  r_inab_gp46: {type:"result",rtype:"ok",  icon:"🏛️",tag:"Inabilità GP",title:"Inabilità privilegio Gestione Pubblica",cod:"Gr2·Pr12·Ti46",web:true,pat:true,desc:"Ex-INPDAP."},
+  r_inab_gp47: {type:"result",rtype:"ok",  icon:"🏛️",tag:"Inabilità GP",title:"Inabilità proficuo lavoro Gestione Pubblica",cod:"Gr2·Pr12·Ti47",web:true,pat:true,desc:"Ex-INPDAP."},
+  r_inab_335:  {type:"result",rtype:"ok",  icon:"🆕",tag:"Inabilità contributivo",title:"Inabilità art.2 c.12 L.335/1995",cod:"Gr2·Pr12·Ti52",web:true,pat:true,desc:"Sistema contributivo puro."},
+  r_inab_232:  {type:"result",rtype:"ok",  icon:"🆕",tag:"Inabilità contributivo",title:"Inabilità art.1 c.250 L.232/2016",cod:"Gr2·Pr12·Ti168",web:true,pat:true,desc:""},
+  r_inab_dm:   {type:"result",rtype:"warn",icon:"🔄",tag:"Inabilità+computo GS",title:"Inabilità con computo D.M.282/1996",cod:"Gr2·Pr12·Ti45",web:true,pat:true,callout:"Solo se AGO+GS."},
+  r_inv_old:   {type:"result",rtype:"ok",  icon:"🏛️",tag:"Vecchio ordinamento",title:"Pensione di invalidità (pre-L.222/1984)",cod:"Gr2·Pr13·Ti1/5/9/11/77",web:true,pat:true,desc:"Cinque varianti — pratiche storiche residuali."},
+  r_rev_ord:   {type:"result",rtype:"ok",  icon:"💔",tag:"Reversibilità",title:"Pensione di reversibilità",cod:"Gr3·Pr21·Ti1",web:true,pat:true,desc:"Coniuge 60%, figli +20% cad. Riduzione per cumulo con redditi propri."},
+  r_rev_suppl: {type:"result",rtype:"ok",  icon:"🔄",tag:"Reversibilità suppl.",title:"Pensione supplementare di reversibilità",cod:"Gr3·Pr21·Ti9",web:true,pat:true,desc:"Posizione secondaria del de cuius."},
+  r_rev_nm:    {type:"result",rtype:"ok",  icon:"📜",tag:"Storica",title:"Reversibilità non meccanizzata",cod:"Gr3·Pr210·Ti14",web:true,pat:true,desc:"Gestioni storiche non informatizzate."},
+  r_ind_ord:   {type:"result",rtype:"ok",  icon:"💼",tag:"Pensione indiretta",title:"Pensione indiretta",cod:"Gr3·Pr22·Ti1",web:true,pat:true,desc:"Stesse aliquote della reversibilità."},
+  r_ind_priv:  {type:"result",rtype:"ok",  icon:"⚖️",tag:"Indiretta privilegiata",title:"Pensione privilegiata indiretta",cod:"Gr3·Pr22·Ti5",web:true,pat:true,desc:"Militari, forze dell'ordine."},
+  r_ind_suppl: {type:"result",rtype:"ok",  icon:"🔄",tag:"Indiretta suppl.",title:"Pensione supplementare indiretta",cod:"Gr3·Pr22·Ti9",web:true,pat:true,desc:"Posizione secondaria."},
+  r_ind_gp:    {type:"result",rtype:"ok",  icon:"🏛️",tag:"Indiretta GP",title:"Indiretta privilegio Gestione Pubblica",cod:"Gr3·Pr22·Ti46",web:true,pat:true,desc:"Ex-INPDAP."},
+  r_ind_dm:    {type:"result",rtype:"warn",icon:"🔄",tag:"Indiretta+computo GS",title:"Indiretta con computo D.M.282/1996",cod:"Gr3·Pr22·Ti45",web:true,pat:true,callout:"De cuius aveva contributi in AGO e GS."},
+  r_ind_nm:    {type:"result",rtype:"ok",  icon:"📜",tag:"Storica",title:"Indiretta non meccanizzata",cod:"Gr3·Pr210·Ti15",web:true,pat:true,desc:"Gestioni storiche."},
+  r_marittimo: {type:"result",rtype:"ok",  icon:"⚓",tag:"Superstiti marittimi",title:"Superstiti di marittimo scomparso in mare",cod:"Gr3·Pr23·Ti1",web:true,pat:true,callout:"Previo provvedimento giudiziale dichiarativo."},
+  r_tantum:    {type:"result",rtype:"ok",  icon:"💰",tag:"Una tantum",title:"Indennità una tantum",cod:"Gr3·Pr25·Ti1",web:true,pat:true,desc:"Liquidazione in capitale."},
+};
+
+// ═══════════════════════════════════════════════════════════
+// WIZARD ENGINE
+// ═══════════════════════════════════════════════════════════
+function showNode(nodeId) {
+  S.current = nodeId;
+  const node = NODES[nodeId];
+  if (!node) return;
+  if (node.type === 'result') { showResult(node); return; }
+  setStep(3);
+
+  // Per i superstiti non abbiamo profilo → elig senza filtri
+  const hasProfilo = S.profile.tipo === 'diretta';
+  const { w: E } = hasProfilo
+    ? calcElig(S.profile, S.declared)
+    : calcElig({ eta:99, anni:99, annoInizio:1980, sesso:'m', gests:['fpld','inpdap','gs','cassa'] }, S.declared);
+
+  const trail = S.history.length
+    ? '<div class="trail">'+S.history.map(h=>`<span class="trail-chip">${h.label}</span>`).join('')+'</div>' : '';
+  const autoBadge = node.type === 'auto'
+    ? `<div class="auto-badge">🔵 AUTO – INPS: rilevazione automatica dagli archivi</div>` : '';
+
+  const optsHtml = node.opts.map(o => {
+    const e   = o.ek ? E[o.ek] : null;
+    const dis = e && !e.ok;
+    const sug = e?.suggested;
+    const why = e?.why || '';
+    if (dis) return `<button class="opt" disabled>
+      <span class="ob-icon" style="background:${o.bg||'#f5f5f5'}">${o.icon||'▸'}</span>
+      <span style="flex:1">
+        <span class="ob-title">${o.label}</span>
+        ${o.desc?`<span class="ob-desc">${o.desc}</span>`:''}
+        ${why?`<span class="ob-why">🚫 ${why}</span>`:''}
+      </span></button>`;
+    const click = `choose('${nodeId}','${o.key}',${JSON.stringify(o.label)},'${o.next}')`;
+    return `<button class="opt${sug?' suggested':''}" onclick="${click}">
+      <span class="ob-icon" style="background:${o.bg||'#E8F0F8'}">${o.icon||'▸'}</span>
+      <span style="flex:1">
+        <span class="ob-title">${o.label}</span>
+        ${o.desc?`<span class="ob-desc">${o.desc}</span>`:''}
+      </span>
+      <span class="ob-arrow">›</span></button>`;
+  }).join('');
+
+  const backBtn = S.history.length
+    ? `<button class="btn btn-secondary" onclick="wizBack()">← Indietro</button>` : '';
+
+  document.getElementById('cbody').innerHTML = `
+    <div class="qblock">
+      ${trail}
+      ${autoBadge}
+      <div class="qlabel">${node.label}</div>
+      ${node.sub?`<div class="qsub">${node.sub}</div>`:''}
+      ${node.autoText?`<div class="qsub" style="font-style:italic;color:#1a5276">${node.autoText}</div>`:''}
+      <div class="opts">${optsHtml}</div>
+      <div class="btn-row">${backBtn}</div>
+    </div>`;
+}
+
+function choose(fromId, key, label, nextId) {
+  S.history.push({nodeId:fromId, key, label, next:nextId});
+  showNode(nextId);
+}
+// wizBack defined below
+
+// ═══════════════════════════════════════════════════════════
+// RISULTATO
+// ═══════════════════════════════════════════════════════════
+function showResult(node) {
+  setStep(4);
+  document.getElementById('ctitle').textContent = 'Tipologia di domanda identificata';
+  const p = S.profile;
+  const d = S.declared;
+
+  const trail = S.history.length
+    ? '<div class="trail">'+S.history.map(h=>`<span class="trail-chip">${h.label}</span>`).join('')+'</div>' : '';
+
+  // Profilo summary
+  let pchips = [], dchips = [];
+  if (p.tipo === 'diretta') {
+    const anno = p.annoInizio;
+    pchips = [
+      p.sesso === 'f' ? '👩 Donna' : '👨 Uomo',
+      `${p.eta} anni`,
+      `${p.anni} anni contributi`,
+      anno ? `Prima contr. ${anno} (${anno<1996?'misto':'contr. puro'})` : null,
+    ].filter(Boolean);
+    const gMap = {fpld:'FPLD',gs:'Gest. Separata',inpdap:'Ex-INPDAP',cassa:'Cassa prof.'};
+    (p.gests||[]).forEach(g => { if(gMap[g]) pchips.push(gMap[g]); });
+    const dMap = {q100:'Quota 100',q102:'Quota 102',q103:'Quota 103',donna:'Opzione donna',
+      gravosi:'Lavori gravosi',salvaguardia:'Salvaguardia',amianto:'Amianto',precoce:'Lav. precoce',
+      pa:'Esubero PA',editoria:'Editoria',vittima:'Vittima L.206',invalido:'Invalidità',esteri:'Contributi esteri'};
+    dchips = Object.keys(d).filter(k=>d[k]&&dMap[k]).map(k=>dMap[k]);
+  } else {
+    pchips = ['🌿 Pensione ai superstiti'];
+    if (p.cf)   pchips.push(`CF de cuius: ${p.cf}`);
+    if (p.nome) pchips.push(`${p.nome} ${p.cogn} (${p.nasc})`);
+    const relMap = {coniuge:'Coniuge/unito civ.',figlio:'Figlio/figlia',genitore:'Genitore',altro:'Altro familiare'};
+    if (p.rel)  pchips.push(relMap[p.rel]||p.rel);
+  }
+
+  const callout = node.callout ? `<div class="callout">⚠️ ${node.callout}</div>` : '';
+  const desc    = node.desc    ? `<div class="rdesc">${node.desc}</div>`           : '';
+  const wbdg = `<span class="chbdg ${node.web?'ok':'no'}">${node.web?'✓':'—'} WebDOM</span>`;
+  const pbdg = `<span class="chbdg ${node.pat?'ok':'no'}">${node.pat?'✓':'—'} Patronato</span>`;
+
+  const backToStep = p.tipo === 'diretta'
+    ? `<button class="btn btn-secondary" onclick="renderStep2()">← Modifica situazioni</button>`
+    : `<button class="btn btn-secondary" onclick="renderStepSuperstiti()">← Modifica dati de cuius</button>`;
+
+  document.getElementById('cbody').innerHTML = `
+    <div class="qblock">
+      ${trail}
+      <div class="profsum">
+        <h4>Profilo${p.tipo==='diretta'?' contributivo':' — richiedente'}</h4>
+        <div class="pchips" style="margin-bottom:${dchips.length?'8px':'0'}">
+          ${pchips.map(c=>`<span class="pchip">${c}</span>`).join('')}
+        </div>
+        ${dchips.length?`<div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">Situazioni dichiarate</div>
+        <div class="pchips">${dchips.map(c=>`<span class="pchip spec">${c}</span>`).join('')}</div>`:''}
+      </div>
+      <div class="res-card">
+        <div class="res-hdr ${node.rtype||'ok'}">
+          <span class="ricon">${node.icon||'✅'}</span>
+          <div>
+            <div class="rtag">${node.tag||''}</div>
+            <div class="rtitle">${node.title}</div>
+          </div>
+        </div>
+        <div class="rbody">
+          ${node.cod?`<span class="rcode">${node.cod}</span>`:''}
+          ${callout}${desc}
+          <div class="chrow">${wbdg}${pbdg}</div>
+          <div class="counter"><strong>Semplificazione:</strong> da 68 tipologie presentabili a <strong class="n"> 1 </strong> tipologia pertinente.</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="wizBack()">← Modifica ultima scelta</button>
+        ${backToStep}
+        <button class="btn btn-restart" onclick="restart()">↺ Ricomincia</button>
+        <button class="btn btn-primary" onclick="alert('In un sistema reale questo aprirebbe la domanda pre-compilata su MyINPS.')">Procedi su MyINPS →</button>
+      </div>
+    </div>`;
+}
+
+function wizBack() {
+  if (!S.history.length) return;
+  const last = S.history.pop();
+  showNode(last.nodeId);
+}
+
+function restart() {
+  S.tipologia=null; S.profile={}; S.declared={}; S.history=[]; S.current=null;
+  renderStep0();
+}
+
+renderStep0();
+</script>
+</body>
+</html>

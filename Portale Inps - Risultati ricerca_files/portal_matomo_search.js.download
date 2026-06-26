@@ -1,0 +1,66 @@
+const targetNode = document.getElementById('totaleRisultati');
+const matomoUrl  = "https://servizi2.inps.it/stat4/";
+const siteID = '2';
+if (targetNode) {
+    const config = { childList: true, subtree: true };
+
+    const callbackTotaleRisultati = function (mutationsList, observer) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'childList') {
+                // === INIZIO codice originale ===
+                var pkDocumentTitle = document.title;
+                var pkBarPathDelPortale = '';
+                if (typeof sPathBarDelPortale !== 'undefined') {
+                    if (sPathBarDelPortale.substring(0, 1) != '/') {
+                        pkBarPathDelPortale = '/';
+                    }
+                    pkBarPathDelPortale += sPathBarDelPortale;
+                } else {
+                    pkBarPathDelPortale = window.location.href;
+                }
+
+                const search_count = parseInt($('#totaleRisultati').text()) || 0;
+                const full_text = sessionStorage?.getItem('fulltext')?.replaceAll(' ', '+') || '';
+
+                if (!searchParams.has('fulltext')) {
+                    searchParams.set('fulltext', full_text);
+                }
+                searchParams.set('search_count', search_count);
+                url.search = searchParams.toString();
+
+                var _paq = window._paq = window._paq || [];
+                _paq.push(['setDocumentTitle', pkBarPathDelPortale]);
+                _paq.push(['setCustomUrl', decodeURIComponent(url.toString())]);
+                _paq.push(['addDownloadExtensions', 'owl|json']);
+                _paq.push(['trackPageView']);
+                _paq.push(['enableLinkTracking']);
+                (function () {
+                    var u = matomoUrl;
+                    _paq.push(['setTrackerUrl', u + 'matomo.php']);
+                    _paq.push(['setSiteId', siteID]);
+                    var d = document,
+                        g = d.createElement('script'),
+                        s = d.getElementsByTagName('script')[0];
+                    g.type = 'text/javascript';
+                    g.async = true;
+                    g.defer = true;
+                    g.src = u + 'matomo.js';
+                    s.parentNode.insertBefore(g, s);
+                })();
+
+                function trackPiwikScrollPageView() {
+                    _paq.push(['trackPageView']);
+                }
+
+                getCookieByName = function (name) {
+                    match = document.cookie.match(new RegExp(name + '=([^;]+)'));
+                    return match ? match[1] : '';
+                };
+                // === FINE codice originale ===
+            }
+        }
+    };
+
+    const observer = new MutationObserver(callbackTotaleRisultati);
+    observer.observe(targetNode, config);
+}

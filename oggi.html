@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Situazione attuale — Domande di Pensione INPS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'Titillium Web','Segoe UI',Arial,sans-serif;background:#f4f6fa;color:#1a1a2e;min-height:100vh}
+.site-header{background:#003370}
+.header-bar{display:flex;align-items:center;gap:16px;padding:12px 48px;border-bottom:3px solid #CC0000}
+.inps-badge{background:white;border-radius:4px;padding:5px 10px;font-weight:900;font-size:16px;color:#003370;letter-spacing:.04em}
+.header-title{font-size:13px;opacity:.9;line-height:1.4;color:white}
+.header-title strong{display:block;font-size:15px}
+.nav-back{background:#005CA9;padding:10px 48px;display:flex;align-items:center;gap:8px}
+.nav-back a{color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px}
+.nav-back a:hover{color:white}
+.hero{background:linear-gradient(135deg,#1a3a6e 0%,#003370 100%);color:white;padding:52px 48px 60px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:50px;background:#f4f6fa;clip-path:ellipse(55% 100% at 50% 100%)}
+.hero-inner{max-width:820px;margin:0 auto}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px}
+.hero h1{font-size:clamp(24px,3.5vw,38px);font-weight:700;line-height:1.2;margin-bottom:14px}
+.hero p{font-size:16px;line-height:1.7;opacity:.85;max-width:620px}
+.main{max-width:960px;margin:0 auto;padding:52px 24px 80px}
+.section{margin-bottom:52px}
+.section-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#005CA9;margin-bottom:10px}
+.section h2{font-size:24px;font-weight:700;color:#003370;margin-bottom:14px}
+.section p{font-size:14px;color:#444;line-height:1.75;max-width:720px;margin-bottom:12px}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:36px}
+.stat-box{background:white;border-radius:10px;padding:18px 22px;flex:1;min-width:150px;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.stat-box .n{font-size:36px;font-weight:700;color:#003370;line-height:1}
+.stat-box .l{font-size:12px;color:#666;margin-top:6px;line-height:1.4}
+.stat-box.accent .n{color:#CC0000}
+
+/* PROBLEMA BOX */
+.problema{background:#FFF8F8;border:1px solid #ffcdd2;border-left:5px solid #CC0000;border-radius:8px;padding:20px 24px;margin-bottom:28px}
+.problema h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#CC0000;margin-bottom:10px}
+.problema ul{padding-left:20px}
+.problema li{font-size:14px;color:#444;line-height:1.7;margin-bottom:4px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:10px;box-shadow:0 1px 8px rgba(0,0,0,.08);margin-top:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:11px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:#003370;color:white;white-space:nowrap}
+tbody tr:nth-child(even) td{background:#f8f9fc}
+tbody tr:hover td{background:#eef2ff}
+td{padding:10px 14px;border-top:1px solid #eee;vertical-align:top;line-height:1.45}
+td:first-child{font-weight:600;color:#1a3a6e;white-space:nowrap}
+.tag-gr1a{background:#dde8f5;color:#1a3a6e;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag-gr1v{background:#c8e6c9;color:#1b5e20;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag-gr2{background:#fff9c4;color:#7B4700;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;white-space:nowrap}
+.tag-gr3{background:#fce4ec;color:#880e4f;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;white-space:nowrap}
+.ok{color:#2e7d32;font-weight:700}
+.no{color:#999}
+.warn{color:#CC0000;font-weight:700}
+
+/* FILTERS */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filter-btn{padding:7px 14px;border:1.5px solid #C5D3E0;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:white;color:#444;transition:all .15s}
+.filter-btn:hover{border-color:#005CA9;color:#005CA9}
+.filter-btn.active{background:#003370;color:white;border-color:#003370}
+
+.site-footer{background:#003370;color:rgba(255,255,255,.7);padding:20px 48px;font-size:13px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.site-footer a{color:#7ECFEF;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-bar">
+    <span class="inps-badge">INPS</span>
+    <div class="header-title">
+      <strong>Progetto di razionalizzazione delle domande di pensione</strong>
+      Prototipo di ricerca — non è un servizio ufficiale INPS
+    </div>
+  </div>
+  <div class="nav-back">
+    <a href="index.html">← Torna alla home</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-tag">Situazione attuale</span>
+    <h1>Il catalogo attuale: 98 tipologie di domanda</h1>
+    <p>Il sistema attuale espone il cittadino a un catalogo di 98 voci tecniche formulate in linguaggio normativo, senza alcuna guida su quale sia quella pertinente alla propria situazione contributiva.</p>
+  </div>
+</section>
+
+<main class="main">
+
+  <section class="section">
+    <div class="stats-row">
+      <div class="stat-box accent"><div class="n">98</div><div class="l">Tipologie totali<br>nel dataset INPS</div></div>
+      <div class="stat-box"><div class="n">68</div><div class="l">Presentabili da<br>cittadino o patronato</div></div>
+      <div class="stat-box"><div class="n">30</div><div class="l">Riservate agli<br>operatori INPS interni</div></div>
+      <div class="stat-box"><div class="n">3</div><div class="l">Gruppi (anzianità/<br>vecchiaia, inv., superstiti)</div></div>
+      <div class="stat-box"><div class="n">13</div><div class="l">Prodotti distinti<br>nel catalogo</div></div>
+    </div>
+
+    <div class="problema">
+      <h4>Il problema per il cittadino</h4>
+      <ul>
+        <li>Deve scegliere autonomamente tra 98 voci tecniche, senza conoscere la normativa</li>
+        <li>Alcune misure sono già scadute (Quota 100, 102) ma restano visibili nel catalogo</li>
+        <li>Le platee di salvaguardia sono chiuse, ma il sistema non lo segnala</li>
+        <li>Varianti tecniche della stessa prestazione (es. computo DM282, opzione contributivo) sono indistinguibili senza competenza specifica</li>
+        <li>INPS già possiede tutti i dati necessari per filtrare automaticamente, ma non li usa per guidare la scelta</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-eyebrow">Perimetro cittadino/patronato</div>
+    <h2>Le 68 tipologie presentabili da cittadino o patronato</h2>
+    <p>La tabella mostra tutte le tipologie del perimetro, con gruppo, prodotto, codice tipo e disponibilità sui canali. Le 30 tipologie riservate agli operatori INPS interni sono escluse dall'analisi.</p>
+
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterTable('all',this)">Tutti (68)</button>
+      <button class="filter-btn" onclick="filterTable('gr1a',this)">Anzianità/Anticipata</button>
+      <button class="filter-btn" onclick="filterTable('gr1v',this)">Vecchiaia</button>
+      <button class="filter-btn" onclick="filterTable('gr2',this)">Invalidità/Inabilità</button>
+      <button class="filter-btn" onclick="filterTable('gr3',this)">Superstiti</button>
+    </div>
+
+    <div class="tbl-wrap">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th>Codice</th>
+            <th>Gruppo / Prodotto</th>
+            <th>Descrizione</th>
+            <th>WebDOM</th>
+            <th>Patronato</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <span>Prototipo di ricerca — non è un servizio ufficiale INPS · Giugno 2026</span>
+  <a href="index.html">← Home del progetto</a>
+</footer>
+
+<script>
+const rows = [
+  // [codice, gruppo_tag, classe, prodotto, descrizione, web, pat, note]
+  ["Gr1·Pr1·Ti1",   "gr1a","Anzianità/Anticipata","Pr1 – Anzianità/anticipata","Pensione di anzianità / anticipata","✓","✓",""],
+  ["Gr1·Pr1·Ti17",  "gr1a","Anzianità/Anticipata","Pr1","Pensione di anzianità con sistema calcolo contributivo","✓","✓",""],
+  ["Gr1·Pr1·Ti30",  "gr1a","Anzianità/Anticipata","Pr1","Pensione di anzianità con opzione contributivo","✓","✓",""],
+  ["Gr1·Pr1·Ti40",  "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità/anticipata ex L.243 Mobilità","✓","✓","Non più attuale"],
+  ["Gr1·Pr1·Ti45",  "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità/anticipata con computo Art.3 D.M.282/1996","✓","✓","Solo se AGO + Gest. Separata"],
+  ["Gr1·Pr1·Ti51",  "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata – Lavoratori Precoci L.232/2016","—","✓","Solo patronato"],
+  ["Gr1·Pr1·Ti140", "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità addetti a lavori faticosi e pesanti","✓","✓","D.Lgs.67/2011"],
+  ["Gr1·Pr1·Ti147", "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità/anticipata – Esuberi PA","✓","✓","Solo se ex-INPDAP"],
+  ["Gr1·Pr1·Ti158", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata benefici L.206/2004 – vittime inv.≥80%","✓","✓","Richiede status vittima"],
+  ["Gr1·Pr1·Ti159", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata benefici L.206/2004 – vittime inv.<80%","✓","✓","Richiede status vittima"],
+  ["Gr1·Pr1·Ti161", "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità con maggiorazione amianto L.208/2015","✓","✓","Cert. INAIL"],
+  ["Gr1·Pr1·Ti162", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata prepensionamento editoria (L.416/1981)","✓","✓","Accordo sindacale"],
+  ["Gr1·Pr1·Ti165", "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità – Salvaguardia L.232/2016","✓","—","Platea chiusa"],
+  ["Gr1·Pr1·Ti174", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata Quota 100","✓","✓","Diritto entro 31/12/2021"],
+  ["Gr1·Pr1·Ti176", "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità calc. contributivo sperimentale lavoratrici DL 4/2019","✓","✓","Simulare importo"],
+  ["Gr1·Pr1·Ti179", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata prepensionamento editoria L.160/2019","✓","✓","Accordo sindacale"],
+  ["Gr1·Pr1·Ti181", "gr1a","Anzianità/Anticipata","Pr1","Pensione anzianità – Salvaguardia L.178/2020","✓","✓","Platea chiusa"],
+  ["Gr1·Pr1·Ti185", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata Quota 102","✓","✓","Diritto entro 31/12/2022"],
+  ["Gr1·Pr1·Ti189", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata flessibile (Quota 103)","✓","✓","Diritto entro 31/12/2025"],
+  ["Gr1·Pr1·Ti190", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata opzione donna LB 2023/2024/2025","✓","✓","Simulare importo"],
+  ["Gr1·Pr1·Ti195", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata flessibile opzione contributivo","✓","✓","Simulare importo"],
+  ["Gr1·Pr1·Ti201", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata flessibile LB 2024/2025","✓","✓","Diritto entro 31/12/2025"],
+  ["Gr1·Pr1·Ti202", "gr1a","Anzianità/Anticipata","Pr1","Pensione anticipata flessibile LB 2024/2025 opz. contributivo","✓","✓","Simulare importo"],
+  ["Gr1·Pr2·Ti1",   "gr1v","Vecchiaia","Pr2 – Vecchiaia","Pensione di vecchiaia","✓","✓",""],
+  ["Gr1·Pr2·Ti2",   "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia – trasformazione AOI","✓","✓",""],
+  ["Gr1·Pr2·Ti3",   "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia – trasformazione pensione invalidità","✓","✓",""],
+  ["Gr1·Pr2·Ti8",   "gr1v","Vecchiaia","Pr2","Pensione anticipata di vecchiaia (contributivo puro 64 anni)","✓","✓","Soglia assegno"],
+  ["Gr1·Pr2·Ti9",   "gr1v","Vecchiaia","Pr2","Pensione supplementare di vecchiaia","✓","✓","Dopo pensione principale"],
+  ["Gr1·Pr2·Ti17",  "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia sistema calcolo contributivo (70 anni)","✓","✓",""],
+  ["Gr1·Pr2·Ti30",  "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia con opzione contributivo","✓","✓","Simulare importo"],
+  ["Gr1·Pr2·Ti43",  "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia in deroga","✓","✓","Ante-L.335/1995"],
+  ["Gr1·Pr2·Ti45",  "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia con computo Art.3 D.M.282/1996","✓","✓","Solo se AGO + GS"],
+  ["Gr1·Pr2·Ti77",  "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia a carico di stato estero","✓","✓","Contributi esteri"],
+  ["Gr1·Pr2·Ti159", "gr1v","Vecchiaia","Pr2","Pensione vecchiaia benefici L.206/2004 – vittime inv.<80%","✓","✓","Status vittima"],
+  ["Gr1·Pr2·Ti161", "gr1v","Vecchiaia","Pr2","Pensione vecchiaia con maggiorazione amianto L.208/2015","—","✓","Solo patronato"],
+  ["Gr1·Pr2·Ti172", "gr1v","Vecchiaia","Pr2","Pensione vecchiaia req. anticipato art.1 c.147 L.205/2017","—","✓","Solo patronato"],
+  ["Gr1·Pr2·Ti173", "gr1v","Vecchiaia","Pr2","Pensione vecchiaia req. anticipato L.205/2017 + opz. contributivo","—","✓","Solo patronato"],
+  ["Gr1·Pr2·Ti181", "gr1v","Vecchiaia","Pr2","Pensione di vecchiaia – Salvaguardia L.178/2020","✓","✓","Platea chiusa"],
+  ["Gr1·Pr2·Ti192", "gr1v","Vecchiaia","Pr2","Pensione supplementare vecchiaia con computo D.M.282/1996","✓","✓","Solo se AGO + GS"],
+  ["Gr2·Pr11·Ti1",  "gr2","Invalidità/Inabilità","Pr11 – Ass. ord. invalidità","Assegno ordinario di invalidità","✓","✓","Revisione ogni 3 anni"],
+  ["Gr2·Pr11·Ti4",  "gr2","Invalidità/Inabilità","Pr11","AOI art.2/ter L.114/74","✓","✓","Storica"],
+  ["Gr2·Pr11·Ti5",  "gr2","Invalidità/Inabilità","Pr11","Assegno privilegiato di invalidità","✓","✓",""],
+  ["Gr2·Pr11·Ti45", "gr2","Invalidità/Inabilità","Pr11","AOI con computo D.M.282/1996","✓","✓","Solo se AGO + GS"],
+  ["Gr2·Pr12·Ti1",  "gr2","Invalidità/Inabilità","Pr12 – Pensione inabilità","Pensione ordinaria di inabilità","✓","✓","Visita collegiale"],
+  ["Gr2·Pr12·Ti5",  "gr2","Invalidità/Inabilità","Pr12","Pensione privilegiata di inabilità","✓","✓",""],
+  ["Gr2·Pr12·Ti10", "gr2","Invalidità/Inabilità","Pr12","Pensione di inabilità alla navigazione","✓","✓","Marittimi"],
+  ["Gr2·Pr12·Ti45", "gr2","Invalidità/Inabilità","Pr12","Pensione inabilità con computo D.M.282/1996","✓","✓","Solo se AGO + GS"],
+  ["Gr2·Pr12·Ti46", "gr2","Invalidità/Inabilità","Pr12","Pensione inabilità privilegio Gestione Pubblica","✓","✓","Ex-INPDAP"],
+  ["Gr2·Pr12·Ti47", "gr2","Invalidità/Inabilità","Pr12","Pensione inabilità proficuo lavoro Gestione Pubblica","✓","✓","Ex-INPDAP"],
+  ["Gr2·Pr12·Ti52", "gr2","Invalidità/Inabilità","Pr12","Pensione inabilità art.2 c.12 L.335/1995","✓","✓","Contributivo puro"],
+  ["Gr2·Pr12·Ti168","gr2","Invalidità/Inabilità","Pr12","Pensione inabilità art.1 c.250 L.232/2016","✓","✓",""],
+  ["Gr2·Pr13·Ti1",  "gr2","Invalidità/Inabilità","Pr13 – Inv. vecchio ord.","Pensione ordinaria di invalidità (pre-L.222/1984)","✓","✓","Storica"],
+  ["Gr2·Pr13·Ti5",  "gr2","Invalidità/Inabilità","Pr13","Pensione privilegiata di invalidità (pre-L.222/1984)","✓","✓","Storica"],
+  ["Gr2·Pr13·Ti9",  "gr2","Invalidità/Inabilità","Pr13","Pensione supplementare di invalidità","✓","✓","Storica"],
+  ["Gr2·Pr13·Ti11", "gr2","Invalidità/Inabilità","Pr13","Pensione di invalidità specifica","✓","✓","Storica"],
+  ["Gr2·Pr13·Ti77", "gr2","Invalidità/Inabilità","Pr13","Pensione di invalidità a carico di stato estero","✓","✓","Esteri"],
+  ["Gr3·Pr21·Ti1",  "gr3","Superstiti","Pr21 – Reversibilità","Pensione di reversibilità","✓","✓",""],
+  ["Gr3·Pr21·Ti9",  "gr3","Superstiti","Pr21","Pensione supplementare di reversibilità","✓","✓",""],
+  ["Gr3·Pr22·Ti1",  "gr3","Superstiti","Pr22 – Pensione indiretta","Pensione indiretta","✓","✓",""],
+  ["Gr3·Pr22·Ti5",  "gr3","Superstiti","Pr22","Pensione privilegiata indiretta","✓","✓",""],
+  ["Gr3·Pr22·Ti9",  "gr3","Superstiti","Pr22","Pensione supplementare indiretta","✓","✓",""],
+  ["Gr3·Pr22·Ti45", "gr3","Superstiti","Pr22","Pensione indiretta con computo D.M.282/1996","✓","✓","Solo se AGO + GS"],
+  ["Gr3·Pr22·Ti46", "gr3","Superstiti","Pr22","Pensione indiretta privilegio Gestione Pubblica","✓","✓","Ex-INPDAP"],
+  ["Gr3·Pr23·Ti1",  "gr3","Superstiti","Pr23 – Marittimi","Pensione superstiti marittimo scomparso","✓","✓","Provved. giudiziale"],
+  ["Gr3·Pr24·Ti77", "gr3","Superstiti","Pr24 – Stato estero","Pensione superstiti stato estero","✓","✓","Contributi esteri"],
+  ["Gr3·Pr25·Ti1",  "gr3","Superstiti","Pr25 – Una tantum","Indennità una tantum","✓","✓",""],
+  ["Gr3·Pr210·Ti14","gr3","Superstiti","Pr210 – Non meccanizzata","Pensione non meccanizzata di reversibilità","✓","✓","Storica"],
+  ["Gr3·Pr210·Ti15","gr3","Superstiti","Pr210","Pensione non meccanizzata indiretta","✓","✓","Storica"],
+];
+
+const tagClass = {
+  gr1a:"tag-gr1a", gr1v:"tag-gr1v", gr2:"tag-gr2", gr3:"tag-gr3"
+};
+
+function buildTable(filter) {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  rows.filter(r => filter==='all' || r[1]===filter).forEach(r => {
+    const [cod, grKey, grLabel, prod, desc, web, pat, note] = r;
+    const webHtml = web==='✓' ? '<span class="ok">✓</span>' : '<span class="no">—</span>';
+    const patHtml = pat==='✓' ? '<span class="ok">✓</span>' : '<span class="no">—</span>';
+    const noteHtml = note ? `<span class="warn">${note}</span>` : '';
+    tbody.innerHTML += `<tr data-gr="${grKey}">
+      <td><code style="font-size:11px">${cod}</code></td>
+      <td><span class="${tagClass[grKey]}">${grLabel}</span></td>
+      <td>${desc}</td>
+      <td style="text-align:center">${webHtml}</td>
+      <td style="text-align:center">${patHtml}</td>
+      <td style="font-size:12px;color:#666">${noteHtml}</td>
+    </tr>`;
+  });
+}
+
+function filterTable(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTable(filter);
+}
+
+buildTable('all');
+</script>
+</body>
+</html>
