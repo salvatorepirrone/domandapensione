@@ -6,6 +6,7 @@ Dato un profilo (tipo di richiesta, età, contributi, ante 1996, gestioni, certi
 - `motore.js` – `MotorePensioni.valuta(profilo, {data})` (browser e Node), `parametri(anno)`, `formattaMesi`.
 - `esempi.js` – 12 posizioni fittizie (nome, nota, profilo, domanda attesa), usate dai test e dal menu «Carica una posizione fittizia» di `flusso.html`.
 - `test.js` – `node motore/test.js`.
+- `../simulatore.html` – la demo guidata: le opzioni del wizard sono filtrate dal motore (disabilitate con la motivazione, suggerita quella proposta), con pannello di esito e dettaglio per tipologia.
 - `../flusso.html` – diagramma Mermaid + simulatore; gli id dei nodi coincidono con `risultato.traccia`.
 
 ## Rami e priorità

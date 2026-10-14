@@ -151,6 +151,14 @@ body{font-family:"Titillium Web","Segoe UI",Arial,sans-serif;background:#f0f2f5;
 .btn-restart:hover{background:#ffebee}
 footer{background:var(--blue);color:rgba(255,255,255,.7);padding:24px 32px;font-size:12px;text-align:center}
 footer a{color:var(--cyan);text-decoration:none}
+  .mbox{border:1px solid #cfe0f3;background:#f3f8fd;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+  .mprop{font-size:14px;line-height:1.5}.mprop.nessuna{color:#7B4700}
+  .mbox details summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--blue2);margin-top:8px}
+  .mcand{border-top:1px solid #dde8f4;padding:7px 0;font-size:13px}
+  .mcand ul{margin:4px 0 0 18px;color:var(--muted);font-size:12px}
+  .mbadge{display:inline-block;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;margin-right:6px}
+  .mbadge.ok{background:#C8E6C9;color:#1b5e20}.mbadge.ver{background:#FFE08A;color:#7B4700}.mbadge.no{background:#e6e6e6;color:#555}
+  .mcod{font-family:monospace;font-size:11px;background:#e3ecf7;padding:1px 6px;border-radius:4px}
 </style>
 </head>
 <body>
@@ -201,6 +209,8 @@ footer a{color:var(--cyan);text-decoration:none}
 <footer>Istituto Nazionale Previdenza Sociale — Simulatore a scopo orientativo.
 Per informazioni ufficiali contatta <a href="#">il tuo patronato</a> o <a href="#">la sede INPS</a>. &nbsp;·&nbsp; <a href="https://github.com/salvatorepirrone/domandapensione" style="color:#7ECFEF">GitHub ↗</a></footer>
 
+<script src="motore/catalogo.js"></script>
+<script src="motore/motore.js"></script>
 <script src="motore/esempi.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -211,6 +221,8 @@ const S = {
   profile: {},       // passo 2 (dati INPS)
   declared: {},      // passo 3 (dichiarazioni cittadino)
   history: [],       // percorso wizard
+  motore: undefined, // esito del motore per la posizione corrente
+  demoSup: null,     // dati del de cuius di una posizione fittizia
   current: null,
 };
 
@@ -496,11 +508,12 @@ function mostraDemo() {
 }
 function simulaDemo(id) {
   const e = ESEMPI_POSIZIONI.find(x => x.id === id), p = e.profilo;
-  S.history = []; S.current = null; S.declared = {};
+  S.history = []; S.current = null; S.declared = {}; S.demoSup = null; S.motore = undefined;
   if (p.ramo === 'superstiti') {
     const d = e.deCuius;
     S.tipologia = 'superstiti';
     S.profile = { tipo: 'superstiti', cf: d.cf, nome: d.nome, cogn: d.cognome, nasc: String(d.annoNascita), rel: e.relazione };
+    S.demoSup = p.superstiti.dante; S.motore = undefined;
     setStep(3);
     document.getElementById('ctitle').textContent = 'Simulazione — Pensione ai Superstiti';
     showNode('sup_tipo');
@@ -508,7 +521,8 @@ function simulaDemo(id) {
   }
   S.tipologia = p.ramo === 'invalidita' ? 'invalidita' : 'diretta';
   S.profile = { tipo: 'diretta', sesso: p.sesso === 'F' ? 'f' : 'm', eta: etaAnni(p.dataNascita),
-    anni: p.contributi.anni + (p.contributi.mesi >= 6 ? 1 : 0), annoInizio: e.anagrafica.annoPrimoContributo,
+    anni: p.contributi.anni + (p.contributi.mesi >= 6 ? 1 : 0), contr: p.contributi, dataNascita: p.dataNascita,
+    extra: p, annoInizio: e.anagrafica.annoPrimoContributo,
     gests: p.gestioni.map(g => DEMO_GEST[g]).filter(Boolean) };
   ((p.felpe && p.felpe.certificazioni) || []).forEach(c => { if (DEMO_CERT[c]) S.declared[DEMO_CERT[c]] = true; });
   if (p.ramo === 'invalidita') S.declared.invalido = true;
@@ -615,7 +629,7 @@ function submitSuperstiti() {
   }
 
   S.profile = { tipo: 'superstiti', cf, nome, cogn, nasc, rel };
-  S.history = []; S.declared = {};
+  S.history = []; S.declared = {}; S.demoSup = null; S.motore = undefined;
   setStep(3);
   document.getElementById('ctitle').textContent = 'Simulazione — Pensione ai Superstiti';
   showNode('sup_tipo');
@@ -709,6 +723,7 @@ function submitStep1() {
     eta, anni, annoInizio: anno,
     gests: Array.from(document.querySelectorAll('input[name=gest]:checked')).map(e=>e.value),
   };
+  S.motore = undefined;
   if (S.tipologia === 'invalidita') {
     S.declared = { invalido: true }; S.history = []; S.current = null;
     document.getElementById('ctitle').textContent = 'Simulazione — Invalidità / Inabilità';
@@ -790,7 +805,7 @@ function submitStep2() {
   const checked = Array.from(document.querySelectorAll('input[name=decl]:checked')).map(e=>e.value);
   S.declared = {};
   checked.forEach(v => { S.declared[v] = true; });
-  S.history = []; S.current = null;
+  S.history = []; S.current = null; S.motore = undefined;
   document.getElementById('ctitle').textContent = 'Simulazione di indirizzamento';
   setStep(3);
   showNode('start_diretta');
@@ -991,10 +1006,106 @@ const NODES = {
 // ═══════════════════════════════════════════════════════════
 // WIZARD ENGINE
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// COLLEGAMENTO AL MOTORE (motore/motore.js)
+// ═══════════════════════════════════════════════════════════
+function profiloMotore() {
+  if (S.tipologia === 'superstiti') return S.demoSup ? { ramo: 'superstiti', superstiti: { dante: S.demoSup } } : null;
+  const pr = S.profile, dec = S.declared || {}, x = pr.extra || {};
+  const yr = new Date().getFullYear();
+  const gMap = { fpld: 'AGO', gs: 'GS', inpdap: 'ESCLUSIVA', cassa: 'CASSA' };
+  const cMap = { precoce: 'PRECOCI', gravosi: 'USURANTI', salvaguardia: 'SALVAGUARDIA', amianto: 'AMIANTO', vittima: 'VITTIMA_TERRORISMO' };
+  const gestioni = (pr.gests || []).map(g => gMap[g]).filter(Boolean);
+  if (dec.esteri && !gestioni.includes('ESTERO')) gestioni.push('ESTERO');
+  const cert = Object.keys(cMap).filter(k => dec[k]).map(k => cMap[k]);
+  const p = {
+    ramo: S.tipologia === 'invalidita' ? 'invalidita' : 'diretta',
+    sesso: pr.sesso === 'f' ? 'F' : 'M',
+    dataNascita: pr.dataNascita || (yr - pr.eta) + '-06-30',
+    contributi: pr.contr || { anni: pr.anni, mesi: 0 },
+    ante96: pr.annoInizio < 1996, gestioni,
+    felpe: { certificazioni: cert }, editoria: !!dec.editoria
+  };
+  ['contributiAl1995', 'contributiDopo1996', 'contributiUltimoQuinquennio', 'figli', 'pensionato', 'invalidita', 'deroghe', 'invalidita80'].forEach(k => { if (x[k] !== undefined) p[k] = x[k]; });
+  if (x.felpe && x.felpe.salvaguardia) p.felpe.salvaguardia = x.felpe.salvaguardia;
+  return p;
+}
+function calcolaMotore() {
+  if (typeof MotorePensioni === 'undefined') return null;
+  const p = profiloMotore(); if (!p) return null;
+  let runs;
+  if (p.ramo === 'invalidita') {
+    const gr = p.invalidita && p.invalidita.grado ? [p.invalidita.grado] : ['parziale', 'assoluta'];
+    runs = gr.map(g => MotorePensioni.valuta(Object.assign({}, p, { invalidita: Object.assign({}, p.invalidita, { grado: g }) })));
+  } else runs = [MotorePensioni.valuta(p)];
+  if (runs.some(r => r.errore)) return null;
+  const rank = { accessibile: 3, da_verificare: 2, non_accessibile: 1 };
+  const byCod = {}, nonPert = new Set();
+  runs.forEach(r => r.candidati.forEach(c => { if (!byCod[c.codice] || rank[c.stato] > rank[byCod[c.codice].stato]) byCod[c.codice] = c; }));
+  runs.forEach(r => r.nonPertinenti.forEach(c => { const k = c.split(' ')[0]; if (!byCod[k]) nonPert.add(k); }));
+  const r0 = runs[0];
+  const aperte = []; runs.forEach(r => r.domandeAperte.forEach(d => { if (!aperte.includes(d)) aperte.push(d); }));
+  return { byCod, nonPert, proposta: runs.length === 1 ? r0.proposta : null, alternative: runs.length === 1 ? r0.alternative : [],
+    segnalazioni: r0.segnalazioni, riepilogo: r0.riepilogo, aperte, tutti: Object.values(byCod).sort((a, b) => (rank[b.stato] - rank[a.stato]) || (a.tier - b.tier)) };
+}
+function codiciNodo(cod) {
+  const m = /Gr(\d+)·Pr(\d+)·(.*)/.exec(cod || ''); if (!m) return [];
+  return m[3].split('/').map(t => t.replace('Ti', '').trim()).filter(t => /^\d+$/.test(t)).map(t => [m[1], m[2], t].map(v => v.padStart(4, '0')).join('-'));
+}
+function foglie(nodeId, seen) {
+  seen = seen || new Set(); const n = NODES[nodeId];
+  if (!n || seen.has(nodeId)) return []; seen.add(nodeId);
+  return n.type === 'result' ? [n] : n.opts.reduce((a, o) => a.concat(foglie(o.next, seen)), []);
+}
+// Stato di un'opzione secondo il motore: {ok:true|false|null, why, sug}
+function statoOpzioneMotore(o) {
+  const M = S.motore; if (!M) return { ok: null };
+  let acc = false, unk = false, sug = false; const noAcc = [], np = [];
+  foglie(o.next).forEach(f => {
+    const cs = codiciNodo(f.cod); if (!cs.length) { unk = true; return; }
+    cs.forEach(c => {
+      const k = M.byCod[c];
+      if (k) { if (k.stato !== 'non_accessibile') acc = true; else noAcc.push(k); if (M.proposta && M.proposta.codice === c) sug = true; }
+      else if (M.nonPert.has(c)) np.push(c); else unk = true;
+    });
+  });
+  if (acc) return { ok: true, sug };
+  if (unk || (!noAcc.length && !np.length)) return { ok: null };
+  const k = noAcc[0];
+  const why = k ? k.motivi[0] + (k.maturazione ? ' Requisiti raggiungibili dal ' + k.maturazione.split('-').reverse().join('/') + '.' : '')
+                : 'Non pertinente al tuo profilo (gestioni, certificazioni FELPE o situazione non presenti).';
+  return { ok: false, why };
+}
+const ST_LBL = { accessibile: ['ok', 'Accessibile'], da_verificare: ['ver', 'Da verificare'], non_accessibile: ['no', 'Non accessibile'] };
+function cardMotore(k) {
+  const l = ST_LBL[k.stato];
+  const mat = k.maturazione ? `<li><b>Requisiti raggiungibili dal ${k.maturazione.split('-').reverse().join('/')}</b></li>` : '';
+  return `<div class="mcand"><span class="mbadge ${l[0]}">${l[1]}</span><span class="mcod">${k.codice}</span> ${k.descrizione}<ul>${(k.motivi || []).map(m => `<li>${m}</li>`).join('')}${mat}</ul></div>`;
+}
+function pannelloMotore() {
+  const M = S.motore;
+  if (!M) return `<div class="infobox" style="margin-bottom:14px"><span style="font-size:16px">⚙️</span><div>Per questo percorso il motore non ha dati sufficienti sulla posizione (servono i dati del de cuius): le opzioni non vengono filtrate.</div></div>`;
+  const prop = M.proposta ? `<div class="mprop"><b>Il motore propone:</b> ${M.proposta.descrizione} <span class="mcod">${M.proposta.codice}</span><div style="font-size:12px;color:var(--muted);margin-top:4px">${M.proposta.motivi.join(' ')}</div></div>`
+    : `<div class="mprop nessuna"><b>Il motore non individua una domanda accessibile con certezza.</b></div>`;
+  const alt = M.alternative.length ? `<div style="font-size:12px;margin-top:6px"><b>Alternative:</b> ${M.alternative.map(a => a.descrizione + ' (' + a.codice + ')').join('; ')}</div>` : '';
+  const ver = M.tutti.filter(k => k.stato === 'da_verificare' && k.tier > 0);
+  const verH = ver.length ? `<div style="font-size:12px;margin-top:6px"><b>Da verificare:</b> ${ver.map(a => a.descrizione).join('; ')}</div>` : '';
+  const ape = M.aperte.length ? `<div style="font-size:12px;margin-top:6px;color:var(--muted)">Dati mancanti per sciogliere i dubbi: ${M.aperte.join(', ')}</div>` : '';
+  return `<div class="mbox">${prop}${alt}${verH}${ape}<details><summary>Dettaglio per tipologia (${M.tutti.length})</summary>${M.tutti.map(cardMotore).join('')}</details></div>`;
+}
+function boxMotoreRisultato(node) {
+  const M = S.motore; if (!M) return '';
+  const ks = codiciNodo(node.cod).map(c => M.byCod[c]).filter(Boolean);
+  if (!ks.length) return '';
+  return `<div class="mbox" style="margin-top:12px"><b style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--blue2)">Esito del motore</b>${ks.map(cardMotore).join('')}</div>`;
+}
+
 function showNode(nodeId) {
   S.current = nodeId;
   const node = NODES[nodeId];
   if (!node) return;
+  if (!S.history.length || S.motore === undefined) S.motore = calcolaMotore();
   if (node.type === 'result') { showResult(node); return; }
   setStep(3);
 
@@ -1010,10 +1121,11 @@ function showNode(nodeId) {
     ? `<div class="auto-badge">🔵 AUTO – INPS: rilevazione automatica dagli archivi</div>` : '';
 
   const optsHtml = node.opts.map(o => {
-    const e   = o.ek ? E[o.ek] : null;
-    const dis = e && !e.ok;
-    const sug = e?.suggested;
-    const why = e?.why || '';
+    const m   = statoOpzioneMotore(o);
+    const e   = m.ok === null ? (o.ek ? E[o.ek] : null) : null;
+    const dis = m.ok === false || (e && !e.ok);
+    const sug = m.ok === true ? m.sug : e?.suggested;
+    const why = m.ok === false ? m.why : (e?.why || '');
     if (dis) return `<button class="opt" disabled>
       <span class="ob-icon" style="background:${o.bg||'#f5f5f5'}">${o.icon||'▸'}</span>
       <span style="flex:1">
@@ -1038,6 +1150,7 @@ function showNode(nodeId) {
     <div class="qblock">
       ${trail}
       ${autoBadge}
+      ${S.history.length ? '' : pannelloMotore()}
       <div class="qlabel">${node.label}</div>
       ${node.sub?`<div class="qsub">${node.sub}</div>`:''}
       ${node.autoText?`<div class="qsub" style="font-style:italic;color:#1a5276">${node.autoText}</div>`:''}
@@ -1121,6 +1234,7 @@ function showResult(node) {
         <div class="rbody">
           ${node.cod?`<span class="rcode">${node.cod}</span>`:''}
           ${callout}${desc}
+          ${boxMotoreRisultato(node)}
           <div class="chrow">${wbdg}${pbdg}</div>
           <div class="counter"><strong>Semplificazione:</strong> da 68 tipologie presentabili a <strong class="n"> 1 </strong> tipologia pertinente.</div>
         </div>
@@ -1141,7 +1255,7 @@ function wizBack() {
 }
 
 function restart() {
-  S.tipologia=null; S.profile={}; S.declared={}; S.history=[]; S.current=null;
+  S.tipologia=null; S.profile={}; S.declared={}; S.history=[]; S.current=null; S.motore=undefined; S.demoSup=null;
   renderStep0();
 }
 
