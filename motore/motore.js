@@ -30,7 +30,6 @@
   // (legge di bilancio 2026; estremi da confermare). Oltre il 2028 si mantiene il 2028.
   const AGG = { 2027: 1, 2028: 3 };
   function agg(anno) { return anno >= 2028 ? AGG[2028] : (AGG[anno] || 0); }
-  const ASSEGNO_SOCIALE_ANNUO = 7101.12; // 2026, da aggiornare ogni anno
   function parametri(anno) {
     const a = agg(anno);
     return {
@@ -43,7 +42,6 @@
       precoci: 41 * 12 + a,
       gravosiEta: 66 * 12 + 7,           // art. 1 c. 147 L. 205/2017: non adeguato
       usurantiEta: 61 * 12 + 7,          // D.Lgs. 67/2011 (dipendenti); autonomi +12 mesi
-      assegnoSocialeMensile: ASSEGNO_SOCIALE_ANNUO / 13
     };
   }
 
@@ -104,7 +102,6 @@
       gsPiuAltre: gest.has('GS') && altre,
       lt18: typeof p.contributiAl1995 === 'number' ? p.contributiAl1995 < 18 : null,
       dopo96M: typeof p.contributiDopo1996 === 'number' ? p.contributiDopo1996 * 12 : null,
-      importo: typeof p.importoPrimaRata === 'number' ? p.importoPrimaRata : null,
       figli: p.figli || 0,
       sogliaAnt: sesso === 'F' ? P.anticipataF : P.anticipataM,
       alla: alla
@@ -119,15 +116,6 @@
     L147_2013: ['0155', '0155'], L147_2014: ['0157', '0157'], L208: [null, '0160'],
     L232: ['0165', '0165'], L178: ['0181', '0181']
   };
-
-  function sogliaImporto64(c) {
-    const mult = c.sesso === 'F' && c.figli >= 2 ? 2.6 : (c.sesso === 'F' && c.figli === 1 ? 2.8 : 3);
-    return mult * c.P.assegnoSocialeMensile;
-  }
-  function controlloImporto(c, soglia, etichetta) {
-    if (c.importo === null) return VER(['Verificare che l\'importo della prima rata non sia inferiore a ' + etichetta + ' (circa ' + soglia.toFixed(0) + ' €/mese nel ' + c.P.anno + ').']);
-    return c.importo >= soglia ? null : NO(['L\'importo stimato (' + c.importo + ' €) è inferiore alla soglia di ' + soglia.toFixed(0) + ' € (' + etichetta + ').']);
-  }
 
   const REGOLE_DIRETTA = [
     // ── Tier 1: vecchiaia ──────────────────────────────────────
@@ -150,8 +138,7 @@
       ]);
       if (via71.stato === 'accessibile') return OK(['Vecchiaia contributiva a ' + fmt(c.P.vecchiaiaContributiva71) + ' con 5 anni effettivi, senza soglia di importo.']);
       if (via67.stato === 'accessibile') {
-        const imp = controlloImporto(c, 1.5 * c.P.assegnoSocialeMensile, '1,5 volte l\'assegno sociale');
-        return imp === null ? OK(['Vecchiaia contributiva a ' + fmt(c.P.vecchiaia) + ' con 20 anni e importo sopra la soglia.']) : imp;
+        return OK(['Vecchiaia contributiva a ' + fmt(c.P.vecchiaia) + ' con 20 anni di contributi (la soglia di importo di 1,5 volte l\'assegno sociale è verificata in istruttoria).']);
       }
       return NO(via67.motivi.concat(via71.motivi), Math.min(via67.mancano, via71.mancano));
     } },
@@ -223,8 +210,7 @@
         [c.contrM >= 240, 'Servono 20 anni di contributi (hai ' + fmt(c.contrM) + ').', 240 - c.contrM]
       ]);
       if (base.stato !== 'accessibile') return base;
-      const imp = controlloImporto(c, sogliaImporto64(c), c.sesso === 'F' && c.figli ? 'la soglia ridotta per le madri (verificare)' : '3 volte l\'assegno sociale');
-      return imp === null ? OK(['Pensione anticipata contributiva a ' + fmt(c.P.contributiva64) + ' con importo sopra la soglia.']) : imp;
+      return OK(['Pensione anticipata contributiva a ' + fmt(c.P.contributiva64) + ' (la soglia di importo è verificata in istruttoria, non dal motore).']);
     } },
     { codice: '0001-0001-0045', tier: 2, valuta: function (c) {
       if (!c.gsPiuAltre || !c.ante96) return null;
@@ -578,7 +564,6 @@
     // domande aperte utili a sciogliere i "da verificare" (per il wizard)
     const aperte = [];
     if (ramo === 'diretta') {
-      if (!c.ante96 && c.importo === null) aperte.push('importoPrimaRata');
       if (c.ante96 && c.gest.has('GS') && c.lt18 === null) aperte.push('contributiAl1995');
       if (c.ante96 && c.gsPiuAltre && c.dopo96M === null) aperte.push('contributiDopo1996');
     }

@@ -31,19 +31,9 @@ t('anticipata ordinaria uomo con 42a e 9m → non accessibile, maturazione tra 1
   assert.strictEqual(stato(r, '0001-0001-0001'), 'non_accessibile');
   assert.strictEqual(r.candidati.find(x => x.codice === '0001-0001-0001').maturazione, '2026-11-14');
 });
-t('contributivo puro, 65 anni, 24 anni, importo noto → anticipata contributiva a 64', () => {
-  const r = M.valuta({ ...base, dataNascita: '1961-01-01', contributi: { anni: 24 }, ante96: false, importoPrimaRata: 1800 }, D);
-  assert.strictEqual(cod(r), '0001-0001-0017');
-});
-t('contributivo puro, importo sconosciuto → da verificare + domanda aperta', () => {
+t('contributivo puro, 65 anni, 24 anni, anticipata contributiva a 64 (importo non verificato)', () => {
   const r = M.valuta({ ...base, dataNascita: '1961-01-01', contributi: { anni: 24 }, ante96: false }, D);
-  assert.strictEqual(r.proposta, null);
-  assert.strictEqual(stato(r, '0001-0001-0017'), 'da_verificare');
-  assert.ok(r.domandeAperte.includes('importoPrimaRata'));
-});
-t('contributivo puro, importo sotto soglia → non accessibile', () => {
-  const r = M.valuta({ ...base, dataNascita: '1961-01-01', contributi: { anni: 24 }, ante96: false, importoPrimaRata: 900 }, D);
-  assert.strictEqual(stato(r, '0001-0001-0017'), 'non_accessibile');
+  assert.strictEqual(cod(r), '0001-0001-0017');
 });
 t('contributivo puro, 72 anni, 6 anni effettivi → vecchiaia a 71 anni', () => {
   const r = M.valuta({ ...base, dataNascita: '1954-02-01', contributi: { anni: 6 }, contributiEffettivi: { anni: 6 }, ante96: false }, D);

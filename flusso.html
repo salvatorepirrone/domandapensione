@@ -156,7 +156,6 @@ table.par td{padding:7px 10px;border-top:1px solid #eee}
           </fieldset>
         </div>
         <div class="grid" style="margin-top:16px">
-          <label class="f">Importo stimato prima rata (€/mese) — opzionale<input type="number" id="importo" min="0" placeholder="es. 1800"></label>
           <label class="f">Anni di contributi al 31/12/1995 — opzionale<input type="number" id="c95" min="0" max="45" placeholder="es. 12"></label>
           <label class="f">Anni di contributi dopo il 1996 — opzionale<input type="number" id="c96" min="0" max="45" placeholder="es. 8"></label>
           <label class="f">Figli (per le donne)<input type="number" id="figli" min="0" max="10" value="0"></label>
@@ -210,16 +209,16 @@ table.par td{padding:7px 10px;border-top:1px solid #eee}
       <ol style="font-size:14px;line-height:1.8;margin-left:18px;color:#333">
         <li><b>Tipo di richiesta</b>: diretta, invalidità/inabilità o superstiti. Ogni ramo ha le sue regole.</li>
         <li><b>Titolarità di pensione</b>: chi è già pensionato (o titolare di AOI) va su supplementari e trasformazioni.</li>
-        <li><b>Regime</b>: il primo contributo prima del 1996 indica il sistema misto; altrimenti contributivo puro (64 anni con soglia di importo, o 71 anni con 5 anni effettivi).</li>
+        <li><b>Regime</b>: il primo contributo prima del 1996 indica il sistema misto; altrimenti contributivo puro (64 anni, o 71 anni con 5 anni effettivi).</li>
         <li><b>Gestioni</b>: Gestione separata con altre gestioni apre il computo ex art. 3 DM 282/1996; forme esclusive e casse rimandano a cumulo/totalizzazione; periodi esteri a prestazioni a carico di Stato estero.</li>
         <li><b>FELPE</b>: la certificazione abilita i percorsi speciali (precoci, usuranti, gravosi, amianto, opzione al contributivo, salvaguardie, L. 206/2004). Senza certificazione questi percorsi non vengono mostrati.</li>
         <li><b>Priorità</b>: vecchiaia accessibile → anticipata ordinaria/contributiva → percorsi speciali. L'amianto è sempre segnalato. Le tipologie marcate «da eliminare» nel catalogo non vengono proposte.</li>
       </ol>
       <details><summary>Parametri per anno di maturazione (speranza di vita)</summary>
         <table class="par" id="tabPar"></table>
-        <p class="note">Adeguamento: +1 mese dal 2027, +3 mesi complessivi dal 2028 (legge di bilancio 2026); assegno sociale 2026: 7.101,12 €/anno. Valori da riallineare ogni anno.</p>
+        <p class="note">Adeguamento: +1 mese dal 2027, +3 mesi complessivi dal 2028 (legge di bilancio 2026). Valori da riallineare ogni anno.</p>
       </details>
-      <p class="note">Prototipo di ricerca: gli esiti «da verificare» richiedono controlli sugli archivi (UNEX, FELPE, anagrafica). Le regole sono in <code>motore/motore.js</code>, i test in <code>motore/test.js</code>.</p>
+      <p class="note">Prototipo di ricerca: il motore filtra le domande con una verifica di massima sui dati delle posizioni anagrafiche (ARCA, FELPE): i requisiti puntuali e gli importi sono verificati in istruttoria. Le regole sono in <code>motore/motore.js</code>, i test in <code>motore/test.js</code>.</p>
     </div>
   </section>
 </main>
@@ -245,7 +244,7 @@ B -->|"Pensione diretta"| D1{"Sei già titolare di una pensione?"}
 D1 -->|"Sì"| D1S["Supplementare (dopo 5 anni) o trasformazione di AOI / invalidità in vecchiaia"]
 D1 -->|"No"| D2{"Primo contributo prima del 1/1/1996?"}
 D2 -->|"Sì"| D2M["Sistema misto: vecchiaia 67 anni + 20 di contributi; anticipata per anzianità contributiva"]
-D2 -->|"No"| D2P["Contributivo puro: 64 anni + 20 + soglia di importo; vecchiaia 67+20 o 71+5 effettivi"]
+D2 -->|"No"| D2P["Contributivo puro: 64 anni + 20; vecchiaia 67+20 o 71+5 effettivi"]
 D2M --> D3{"In quali gestioni hai contributi?"}
 D2P --> D3
 D3 --> D3a["Solo AGO: gestione singola"]
@@ -357,7 +356,6 @@ function costruisciProfilo() {
     ante96: chk('ante96'), gestioni, figli: num('figli') || 0, pensionato: chk('pensionato'),
     felpe: { certificazioni } };
   if (certificazioni.includes('SALVAGUARDIA')) p.felpe.salvaguardia = val('salv');
-  if (num('importo') !== null) p.importoPrimaRata = num('importo');
   if (num('c95') !== null) p.contributiAl1995 = num('c95');
   if (num('c96') !== null) p.contributiDopo1996 = num('c96');
   if (ramo === 'invalidita') {
@@ -366,7 +364,7 @@ function costruisciProfilo() {
   }
   return p;
 }
-const ETICHETTE = { importoPrimaRata: 'importo stimato della prima rata', contributiAl1995: 'anni di contributi al 31/12/1995',
+const ETICHETTE = { contributiAl1995: 'anni di contributi al 31/12/1995',
   contributiDopo1996: 'anni di contributi dopo il 1996', contributiUltimoQuinquennio: 'contributi nell\'ultimo quinquennio',
   'felpe.salvaguardia': 'quale salvaguardia', dataNascita: 'data di nascita', contributi: 'contributi totali' };
 function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }

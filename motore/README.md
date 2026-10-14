@@ -15,7 +15,7 @@ Dato un profilo (tipo di richiesta, età, contributi, ante 1996, gestioni, certi
 Esito per tipologia: `accessibile`, `non_accessibile` (con motivi e data di maturazione), `da_verificare` (dato mancante → `domandeAperte`).
 
 ## Profilo
-`{ramo, sesso, dataNascita, contributi:{anni,mesi}, ante96, gestioni:[AGO|GS|ESCLUSIVA|CASSA|ESTERO], felpe:{certificazioni[], salvaguardia}, importoPrimaRata, contributiAl1995, contributiDopo1996, figli, pensionato, invalidita:{...}, superstiti:{dante:{...}}}`
+`{ramo, sesso, dataNascita, contributi:{anni,mesi}, ante96, gestioni:[AGO|GS|ESCLUSIVA|CASSA|ESTERO], felpe:{certificazioni[], salvaguardia}, contributiAl1995, contributiDopo1996, figli, pensionato, invalidita:{...}, superstiti:{dante:{...}}}`
 
 ## Limiti
-Prototipo. Da verificare sulle norme: c. 250 L. 232/2016, c. 500 L. 160/2019, art. 2-ter L. 114/74, soglia 2,8/2,6 AS per donne con figli, estremi della legge di bilancio 2026 (adeguamento speranza di vita). Il contenuto di ARCA non è noto. La mappatura salvaguardie→tipologie e le stime alla data passata sono assunzioni.
+Prototipo. Il motore **filtra** le domande con una verifica di massima sui dati di ARCA (archivio delle posizioni anagrafiche) e FELPE; non verifica puntualmente i requisiti né gli importi (soglie 1,5/3 volte l'assegno sociale escluse: spetta all'istruttoria). Da verificare sulle norme: c. 250 L. 232/2016, c. 500 L. 160/2019, art. 2-ter L. 114/74, estremi della legge di bilancio 2026 (adeguamento speranza di vita). La mappatura salvaguardie→tipologie e le stime alla data passata sono assunzioni.
