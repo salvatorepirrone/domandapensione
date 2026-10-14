@@ -201,12 +201,13 @@ footer a{color:var(--cyan);text-decoration:none}
 <footer>Istituto Nazionale Previdenza Sociale — Simulatore a scopo orientativo.
 Per informazioni ufficiali contatta <a href="#">il tuo patronato</a> o <a href="#">la sede INPS</a>. &nbsp;·&nbsp; <a href="https://github.com/salvatorepirrone/domandapensione" style="color:#7ECFEF">GitHub ↗</a></footer>
 
+<script src="motore/esempi.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════
 // STATO
 // ═══════════════════════════════════════════════════════════
 const S = {
-  tipologia: null,   // 'diretta' | 'superstiti'
+  tipologia: null,   // 'diretta' | 'invalidita' | 'superstiti'
   profile: {},       // passo 2 (dati INPS)
   declared: {},      // passo 3 (dichiarazioni cittadino)
   history: [],       // percorso wizard
@@ -423,25 +424,108 @@ function renderStep0() {
   document.getElementById('ctitle').textContent = 'Tipo di richiesta';
   document.getElementById('cbody').innerHTML = `
     <p style="font-size:15px;color:var(--muted);margin-bottom:22px;line-height:1.6">
-      Prima di tutto: la pensione che vuoi richiedere riguarda te direttamente, oppure sei un familiare di un iscritto o pensionato deceduto?
+      Prima di tutto: che cosa vuoi richiedere? Una pensione diretta di anzianità o vecchiaia, una prestazione per invalidità o inabilità, oppure una pensione ai superstiti come familiare di un iscritto o pensionato deceduto?
     </p>
     <div class="choice-cards">
       <div class="choice-card" onclick="selectTipo('diretta')">
         <div class="cc-icon">👤</div>
         <div class="cc-title">Pensione diretta</div>
-        <div class="cc-desc">Anzianità, vecchiaia, invalidità o inabilità basate sulla tua posizione contributiva personale.</div>
+        <div class="cc-desc">Anzianità e vecchiaia basate sulla tua posizione contributiva personale.</div>
+      </div>
+      <div class="choice-card" onclick="selectTipo('invalidita')">
+        <div class="cc-icon">🏥</div>
+        <div class="cc-title">Invalidità / inabilità</div>
+        <div class="cc-desc">Assegno ordinario di invalidità, pensione di inabilità o pensione di invalidità del vecchio ordinamento, per riduzione della capacità lavorativa.</div>
       </div>
       <div class="choice-card" onclick="selectTipo('superstiti')">
         <div class="cc-icon">🌿</div>
         <div class="cc-title">Pensione ai superstiti</div>
         <div class="cc-desc">Reversibilità o pensione indiretta in qualità di familiare (coniuge, figlio, genitore) di un iscritto o pensionato deceduto.</div>
       </div>
-    </div>`;
+    </div>
+    <div class="sdiv"></div>
+    <div class="stitle">Oppure prova con una posizione fittizia</div>
+    <div class="hint" style="margin-bottom:10px">Dati inventati (nomi e codici fiscali non corrispondono a persone reali): in un sistema reale arriverebbero dagli archivi INPS dopo il login.</div>
+    <div class="frow" style="max-width:520px">
+      <select id="demoSel" onchange="mostraDemo()" style="width:100%;padding:10px;border:1.5px solid #C5D3E0;border-radius:6px;font:inherit">
+        <option value="">— scegli una posizione —</option>
+        ${ESEMPI_POSIZIONI.map(e => `<option value="${e.id}">${e.anagrafica.cognome} ${e.anagrafica.nome} — ${e.nota}</option>`).join('')}
+      </select>
+    </div>
+    <div id="demoScheda"></div>`;
+}
+
+// ─── Posizioni fittizie (motore/esempi.js)
+const DEMO_GEST = { AGO: 'fpld', GS: 'gs', ESCLUSIVA: 'inpdap', CASSA: 'cassa' };
+const DEMO_GEST_LBL = { AGO: 'FPLD (AGO)', GS: 'Gestione Separata', ESCLUSIVA: 'Ex-INPDAP', CASSA: 'Cassa professionale', ESTERO: 'Periodi esteri' };
+const DEMO_CERT = { PRECOCI: 'precoce', USURANTI: 'gravosi', GRAVOSI: 'gravosi', SALVAGUARDIA: 'salvaguardia', AMIANTO: 'amianto', VITTIMA_TERRORISMO: 'vittima' };
+const DEMO_CERT_LBL = { PRECOCI: 'Lavoratore precoce', USURANTI: 'Lavori usuranti', GRAVOSI: 'Attività gravose', SALVAGUARDIA: 'Salvaguardia', AMIANTO: 'Amianto', OPZIONE_CONTRIBUTIVO: 'Opzione al contributivo', VITTIMA_TERRORISMO: 'Vittima del terrorismo' };
+function etaAnni(iso) {
+  const n = new Date(iso), o = new Date();
+  let e = o.getFullYear() - n.getFullYear();
+  if (o < new Date(o.getFullYear(), n.getMonth(), n.getDate())) e--;
+  return e;
+}
+function mostraDemo() {
+  const e = ESEMPI_POSIZIONI.find(x => x.id === document.getElementById('demoSel').value);
+  const box = document.getElementById('demoScheda');
+  if (!e) { box.innerHTML = ''; return; }
+  const p = e.profilo, riga = (k, v) => `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7"><div style="width:190px;color:var(--muted);font-size:13px">${k}</div><div style="font-size:14px;font-weight:600">${v}</div></div>`;
+  let h;
+  if (p.ramo === 'superstiti') {
+    const d = e.deCuius, dd = p.superstiti.dante;
+    h = riga('Richiedente', `${e.anagrafica.cognome} ${e.anagrafica.nome} (${e.relazione}) — CF ${e.anagrafica.cf}`)
+      + riga('Persona deceduta', `${d.cognome} ${d.nome}, nato nel ${d.annoNascita} — CF ${d.cf}`)
+      + riga('Primo contributo', d.annoPrimoContributo)
+      + riga('Anzianità contributiva', dd.contributi.anni + ' anni' + (dd.contributiUltimoQuinquennio != null ? ' (di cui ' + dd.contributiUltimoQuinquennio + ' negli ultimi 5)' : ''))
+      + riga('Titolare di pensione', dd.pensionato ? 'Sì' : 'No')
+      + riga('Gestioni', (dd.gestioni || []).map(g => DEMO_GEST_LBL[g]).join(', '));
+  } else {
+    const cert = (p.felpe && p.felpe.certificazioni) || [];
+    h = riga('Assicurato', `${e.anagrafica.cognome} ${e.anagrafica.nome} — CF ${e.anagrafica.cf}`)
+      + riga('Sesso · età', `${p.sesso === 'F' ? 'Donna' : 'Uomo'} · ${etaAnni(p.dataNascita)} anni (nato il ${p.dataNascita.split('-').reverse().join('/')})`)
+      + riga('Primo contributo', e.anagrafica.annoPrimoContributo + (e.anagrafica.annoPrimoContributo < 1996 ? ' — sistema misto' : ' — contributivo puro'))
+      + riga('Anzianità contributiva', p.contributi.anni + ' anni' + (p.contributi.mesi ? ' e ' + p.contributi.mesi + ' mesi' : ''))
+      + riga('Gestioni', p.gestioni.map(g => DEMO_GEST_LBL[g]).join(', '))
+      + riga('Certificazioni in FELPE', cert.length ? cert.map(c => DEMO_CERT_LBL[c]).join(', ') : 'nessuna')
+      + (p.pensionato ? riga('Già titolare di pensione', 'Sì') : '')
+      + (p.invalidita ? riga('Capacità lavorativa', p.invalidita.grado === 'assoluta' ? 'Assoluta e permanente impossibilità' : 'Ridotta a meno di un terzo') : '');
+  }
+  box.innerHTML = `<div style="margin-top:14px;border:1px solid #dde6f0;border-radius:8px;padding:12px 16px;background:#f8fafd">${h}</div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="simulaDemo('${e.id}')">Simula con questa posizione →</button></div>`;
+}
+function simulaDemo(id) {
+  const e = ESEMPI_POSIZIONI.find(x => x.id === id), p = e.profilo;
+  S.history = []; S.current = null; S.declared = {};
+  if (p.ramo === 'superstiti') {
+    const d = e.deCuius;
+    S.tipologia = 'superstiti';
+    S.profile = { tipo: 'superstiti', cf: d.cf, nome: d.nome, cogn: d.cognome, nasc: String(d.annoNascita), rel: e.relazione };
+    setStep(3);
+    document.getElementById('ctitle').textContent = 'Simulazione — Pensione ai Superstiti';
+    showNode('sup_tipo');
+    return;
+  }
+  S.tipologia = p.ramo === 'invalidita' ? 'invalidita' : 'diretta';
+  S.profile = { tipo: 'diretta', sesso: p.sesso === 'F' ? 'f' : 'm', eta: etaAnni(p.dataNascita),
+    anni: p.contributi.anni + (p.contributi.mesi >= 6 ? 1 : 0), annoInizio: e.anagrafica.annoPrimoContributo,
+    gests: p.gestioni.map(g => DEMO_GEST[g]).filter(Boolean) };
+  ((p.felpe && p.felpe.certificazioni) || []).forEach(c => { if (DEMO_CERT[c]) S.declared[DEMO_CERT[c]] = true; });
+  if (p.ramo === 'invalidita') S.declared.invalido = true;
+  if (p.gestioni.includes('ESTERO')) S.declared.esteri = true;
+  setStep(3);
+  if (p.ramo === 'invalidita') {
+    document.getElementById('ctitle').textContent = 'Simulazione — Invalidità / Inabilità';
+    showNode('inv_tipo');
+    return;
+  }
+  document.getElementById('ctitle').textContent = 'Simulazione di indirizzamento';
+  showNode('start_diretta');
 }
 
 function selectTipo(tipo) {
   S.tipologia = tipo;
-  if (tipo === 'diretta') {
+  if (tipo === 'diretta' || tipo === 'invalidita') {
     renderStep1();
   } else {
     renderStepSuperstiti();
@@ -625,6 +709,13 @@ function submitStep1() {
     eta, anni, annoInizio: anno,
     gests: Array.from(document.querySelectorAll('input[name=gest]:checked')).map(e=>e.value),
   };
+  if (S.tipologia === 'invalidita') {
+    S.declared = { invalido: true }; S.history = []; S.current = null;
+    document.getElementById('ctitle').textContent = 'Simulazione — Invalidità / Inabilità';
+    setStep(3);
+    showNode('inv_tipo');
+    return;
+  }
   renderStep2();
 }
 
@@ -930,7 +1021,7 @@ function showNode(nodeId) {
         ${o.desc?`<span class="ob-desc">${o.desc}</span>`:''}
         ${why?`<span class="ob-why">🚫 ${why}</span>`:''}
       </span></button>`;
-    const click = `choose('${nodeId}','${o.key}',${JSON.stringify(o.label)},'${o.next}')`;
+    const click = `choose('${nodeId}','${o.key}',${JSON.stringify(o.label).replace(/"/g,'&quot;')},'${o.next}')`;
     return `<button class="opt${sug?' suggested':''}" onclick="${click}">
       <span class="ob-icon" style="background:${o.bg||'#E8F0F8'}">${o.icon||'▸'}</span>
       <span style="flex:1">
@@ -1002,7 +1093,9 @@ function showResult(node) {
   const wbdg = `<span class="chbdg ${node.web?'ok':'no'}">${node.web?'✓':'—'} WebDOM</span>`;
   const pbdg = `<span class="chbdg ${node.pat?'ok':'no'}">${node.pat?'✓':'—'} Patronato</span>`;
 
-  const backToStep = p.tipo === 'diretta'
+  const backToStep = S.tipologia === 'invalidita'
+    ? `<button class="btn btn-secondary" onclick="renderStep1()">← Modifica profilo</button>`
+    : p.tipo === 'diretta'
     ? `<button class="btn btn-secondary" onclick="renderStep2()">← Modifica situazioni</button>`
     : `<button class="btn btn-secondary" onclick="renderStepSuperstiti()">← Modifica dati de cuius</button>`;
 
