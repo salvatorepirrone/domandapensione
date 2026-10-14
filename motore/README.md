@@ -4,6 +4,7 @@ Dato un profilo (tipo di richiesta, età, contributi, ante 1996, gestioni, certi
 
 - `catalogo.js` – le 98 tipologie (`codice`, descrizione, canale WebDOM/cittadino, `obsoleta`).
 - `motore.js` – `MotorePensioni.valuta(profilo, {data})` (browser e Node), `parametri(anno)`, `formattaMesi`.
+- `esempi.js` – 12 posizioni fittizie (nome, nota, profilo, domanda attesa), usate dai test e dal menu «Carica una posizione fittizia» di `flusso.html`.
 - `test.js` – `node motore/test.js`.
 - `../flusso.html` – diagramma Mermaid + simulatore; gli id dei nodi coincidono con `risultato.traccia`.
 

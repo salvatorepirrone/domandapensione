@@ -120,4 +120,9 @@ t('tipologie obsolete mai proposte', () => {
   const r = M.valuta({ ...base, sesso: 'F', dataNascita: '1962-01-01', contributi: { anni: 40 }, ante96: true }, D);
   assert.ok(!r.candidati.some(x => obs.has(x.codice)));
 });
+const ESEMPI = require('./esempi.js');
+ESEMPI.forEach(e => t('esempio ' + e.id + ' ' + e.nome + ' → ' + e.atteso, () => {
+  const r = M.valuta(e.profilo, D);
+  assert.strictEqual(r.proposta ? r.proposta.codice : null, e.atteso);
+}));
 console.log(n + ' test superati' + (process.exitCode ? ' — con errori' : ''));

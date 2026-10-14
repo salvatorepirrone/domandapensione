@@ -117,6 +117,8 @@ table.par td{padding:7px 10px;border-top:1px solid #eee}
     <h2>Inserisci un profilo</h2>
     <p>I calcoli girano interamente nel browser (<code>motore/motore.js</code>). I campi opzionali, se lasciati vuoti, producono l'esito «da verificare» e la richiesta del dato mancante.</p>
     <div class="panel">
+      <label class="f" style="margin-bottom:14px;max-width:520px">Carica una posizione fittizia
+        <select id="esempi"><option value="">— scegli un esempio —</option></select></label>
       <div class="ramo-cards" id="ramoCards">
         <button class="rc sel" data-r="diretta"><b>👤 Pensione diretta</b><span>Vecchiaia, anticipata e percorsi speciali sulla tua posizione contributiva.</span></button>
         <button class="rc" data-r="invalidita"><b>🩺 Invalidità / inabilità</b><span>Assegno di invalidità, pensione di inabilità, privilegiate.</span></button>
@@ -226,6 +228,7 @@ table.par td{padding:7px 10px;border-top:1px solid #eee}
 <footer class="site-footer">Progetto di ricerca — non è un servizio ufficiale INPS · <a href="https://github.com/salvatorepirrone/domandapensione" target="_blank">GitHub ↗</a></footer>
 
 <script src="motore/catalogo.js"></script>
+<script src="motore/esempi.js"></script>
 <script src="motore/motore.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script>
@@ -418,6 +421,36 @@ document.getElementById('reset').onclick = () => { ultimaTraccia = []; document.
 })();
 const oggi = new Date(); document.getElementById('dataRif').value = oggi.getFullYear() + '-' + String(oggi.getMonth() + 1).padStart(2, '0') + '-' + String(oggi.getDate()).padStart(2, '0');
 impostaRamo('diretta');
+
+// ───────── Posizioni fittizie
+(function () {
+  const sel = document.getElementById('esempi');
+  ESEMPI_POSIZIONI.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.nome + ' — ' + e.nota; sel.appendChild(o); });
+  const set = (id, v) => { document.getElementById(id).value = v == null ? '' : v; };
+  const setc = (id, v) => { document.getElementById(id).checked = !!v; };
+  sel.onchange = () => {
+    const e = ESEMPI_POSIZIONI.find(x => x.id === sel.value); if (!e) return;
+    const p = e.profilo; impostaRamo(p.ramo);
+    document.querySelectorAll('.gest,.cert').forEach(c => c.checked = false);
+    if (p.ramo === 'superstiti') {
+      const d = p.superstiti.dante, g = d.gestioni || [];
+      setc('dPens', d.pensionato); setc('dSupp', d.titolareSupplementare); setc('dServ', d.causaServizio); setc('dMar', d.marittimoScomparso);
+      setc('dGS', g.includes('GS')); setc('dEsc', g.includes('ESCLUSIVA'));
+      set('dAnni', d.contributi && d.contributi.anni); set('dUlt5', d.contributiUltimoQuinquennio);
+    } else {
+      set('sesso', p.sesso); set('nascita', p.dataNascita); set('cAnni', p.contributi.anni); set('cMesi', p.contributi.mesi || 0);
+      setc('ante96', p.ante96); setc('pensionato', p.pensionato); set('figli', p.figli || 0);
+      set('c95', p.contributiAl1995); set('c96', p.contributiDopo1996);
+      (p.gestioni || []).forEach(g => { const c = document.querySelector('.gest[value=' + g + ']'); if (c) c.checked = true; });
+      const cert = (p.felpe && p.felpe.certificazioni) || [];
+      cert.forEach(g => { const c = document.querySelector('.cert[value=' + g + ']'); if (c) c.checked = true; });
+      document.getElementById('salvWrap').classList.toggle('hidden', !cert.includes('SALVAGUARDIA'));
+      if (p.felpe && p.felpe.salvaguardia) set('salv', p.felpe.salvaguardia);
+      if (p.invalidita) { set('grado', p.invalidita.grado); set('ult5', p.contributiUltimoQuinquennio); }
+    }
+    document.getElementById('vai').click();
+  };
+})();
 </script>
 </body>
 </html>
