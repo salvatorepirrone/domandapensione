@@ -125,4 +125,53 @@ ESEMPI.forEach(e => t('esempio ' + e.id + ' ' + e.iniziali + ' (' + e.scenario.r
   const r = M.valuta(ESEMPI.profiloMotore(e), D);
   assert.strictEqual(r.proposta ? r.proposta.codice : null, e.scenario.atteso);
 }));
+
+// ── Equivalenza: le righe della tabella (regole.json) devono dare lo stesso esito della logica scritta nel codice
+t('tabella e logica nel codice danno lo stesso esito su 4000 profili casuali', () => {
+  const X = M._interno;
+  let seme = 12345;
+  const rnd = () => { seme = (seme * 1103515245 + 12345) & 0x7fffffff; return seme / 0x7fffffff; };
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const subset = (a) => a.filter(() => rnd() < 0.3);
+  const ramiN = ['diretta', 'invalidita', 'superstiti'];
+  let confronti = 0;
+  for (let i = 0; i < 4000; i++) {
+    const anno = 1944 + Math.floor(rnd() * 56);
+    const dante = { pensionato: rnd() < .4, titolareSupplementare: rnd() < .3, causaServizio: rnd() < .3, marittimoScomparso: rnd() < .15,
+      inabileAlDecesso: rnd() < .2, contributi: { anni: Math.floor(rnd() * 40) }, gestioni: ['AGO'].concat(subset(['GS', 'ESCLUSIVA', 'ESTERO'])) };
+    if (rnd() < .5) dante.contributiUltimoQuinquennio = Math.floor(rnd() * 6);
+    const p = {
+      ramo: pick(ramiN), sesso: pick(['M', 'F']), dataNascita: anno + '-' + pick(['01', '06', '11']) + '-' + pick(['05', '20']),
+      contributi: { anni: Math.floor(rnd() * 46), mesi: Math.floor(rnd() * 12) }, ante96: rnd() < .6,
+      gestioni: ['AGO'].concat(subset(['GS', 'ESCLUSIVA', 'CASSA', 'ESTERO'])),
+      felpe: { certificazioni: subset(['PRECOCI', 'USURANTI', 'GRAVOSI', 'AMIANTO', 'SALVAGUARDIA', 'OPZIONE_CONTRIBUTIVO', 'VITTIMA_TERRORISMO']) },
+      figli: Math.floor(rnd() * 3), pensionato: rnd() < .2, titolareAOI: rnd() < .1, titolareInvalidita: rnd() < .1,
+      deroghe: rnd() < .1, invalidita80: rnd() < .1, editoria: rnd() < .1, vittimaInvalidita80: rnd() < .5,
+      invalidita: { grado: pick(['parziale', 'assoluta']), causaServizio: rnd() < .3, marittimo: rnd() < .2, soloRiconoscimento: rnd() < .15 },
+      superstiti: { dante }
+    };
+    if (p.felpe.certificazioni.includes('SALVAGUARDIA') && rnd() < .7) p.felpe.salvaguardia = pick(['L214', 'L135', 'L228', 'DL102', 'L147_2013', 'L147_2014', 'L208', 'L232', 'L178']);
+    if (rnd() < .5) p.contributiAl1995 = Math.floor(rnd() * 30);
+    if (rnd() < .5) p.contributiDopo1996 = Math.floor(rnd() * 30);
+    if (rnd() < .5) p.contributiUltimoQuinquennio = Math.floor(rnd() * 6);
+    const c = X.contesto(p, { data: '2026-10-14' });
+    ['diretta', 'invalidita', 'superstiti'].forEach(ramo => {
+      const leg = {}; X.legacy[ramo].forEach(r => { leg[r.codice] = r; });
+      X.tabella[ramo].forEach(r => {
+        const l = leg[r.codice]; if (!l) return;
+        const a = l.valuta(c), b = r.valuta(c);
+        const sa = a ? a.stato : null, sb = b ? b.stato : null;
+        assert.strictEqual(sb, sa, ramo + ' ' + r.codice + ' tabella=' + sb + ' codice=' + sa + ' profilo ' + JSON.stringify(p));
+        if (a && a.stato === 'non_accessibile') assert.ok(Math.abs((b.mancano || 0) - (a.mancano || 0)) < 1e-9, 'mesi mancanti ' + r.codice);
+        confronti++;
+      });
+    });
+  }
+  assert.ok(confronti > 100000, 'confronti: ' + confronti);
+});
+t('ogni codice della tabella è nel catalogo e ha ramo e priorità coerenti', () => {
+  const TAB = require('./regole.js');
+  const cod = new Set(M.catalogo.map(x => x.codice));
+  TAB.forEach(r => { assert.ok(cod.has(r.codice), 'fuori catalogo: ' + r.codice); assert.ok(r.codice.startsWith({ diretta: '0001', invalidita: '0002', superstiti: '0003' }[r.ramo]), 'ramo/gruppo ' + r.codice); });
+});
 console.log(n + ' test superati' + (process.exitCode ? ' — con errori' : ''));

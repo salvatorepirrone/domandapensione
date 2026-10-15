@@ -3,6 +3,8 @@
 Dato un profilo (tipo di richiesta, età, contributi, ante 1996, gestioni, certificazioni FELPE) individua quale tipologia di domanda di pensione può essere presentata tra le 98 del catalogo.
 
 - `catalogo.js` – le 98 tipologie (`codice`, descrizione, canale WebDOM/cittadino, `obsoleta`).
+- `dati/Requisiti_domande_pensione.xlsx` – la cartella di lavoro con il foglio **Regole motore** (una riga per tipologia e ramo): è la fonte delle regole. Le istruzioni sono nel foglio «Regole motore - guida».
+- `tools/xlsx_to_regole.py` – legge il foglio e genera `regole.json` / `regole.js` (da rilanciare dopo ogni modifica: `python3 motore/tools/xlsx_to_regole.py`).
 - `motore.js` – `MotorePensioni.valuta(profilo, {data})` (browser e Node), `parametri(anno)`, `formattaMesi`.
 - `esempi.js` – 12 posizioni fittizie descritte dalle caratteristiche del richiedente (iniziali, età, contributi, gestioni, FELPE; per i superstiti anche la persona deceduta). Il tipo di richiesta si sceglie nel simulatore; `scenario` serve solo ai test.
 - `test.js` – `node motore/test.js`.
@@ -21,3 +23,6 @@ Esito per tipologia: `accessibile`, `non_accessibile` (con motivi e data di matu
 
 ## Limiti
 Prototipo. Il motore **filtra** le domande con una verifica di massima sui dati di ARCA (archivio delle posizioni anagrafiche) e FELPE; non verifica puntualmente i requisiti né gli importi (soglie 1,5/3 volte l'assegno sociale escluse: spetta all'istruttoria). Da verificare sulle norme: c. 250 L. 232/2016, c. 500 L. 160/2019, art. 2-ter L. 114/74, estremi della legge di bilancio 2026 (adeguamento speranza di vita). La mappatura salvaguardie→tipologie e le stime alla data passata sono assunzioni.
+
+## Tabella delle regole
+Il motore non contiene più l'elenco dei requisiti: lo legge da `regole.json`. Per cambiare una soglia, una condizione o un messaggio si modifica il foglio Excel e si rigenera il file. Le regole che non si esprimono a colonne (computo in Gestione separata, opzione al contributivo, diritti acquisiti, indiretta...) hanno la colonna «Predicato» valorizzata e restano nel codice (`REGOLE_LEGACY` in `motore.js`); le colonne descrittive documentano cosa fanno. Il test di equivalenza confronta, su 4000 profili casuali, ogni riga della tabella con la logica originale scritta nel codice.
