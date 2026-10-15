@@ -1108,12 +1108,47 @@ function boxMotoreRisultato(node) {
   return `<div class="mbox" style="margin-top:12px"><b style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--blue2)">Esito del motore</b>${ks.map(cardMotore).join('')}</div>`;
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// PASSI AUTOMATICI: i dati già noti dalla posizione (gestioni, primo contributo, ...) non si richiedono di nuovo
+// ═══════════════════════════════════════════════════════════
+function chiaveAutomatica(nodeId) {
+  const p = S.profile, d = S.declared || {};
+  if (p.tipo !== 'diretta') return null;
+  const g = new Set(p.gests || []), inv = (p.extra && p.extra.invalidita) || {};
+  const gsPiuAltre = g.has('gs') && (g.has('fpld') || g.has('inpdap') || g.has('cassa'));
+  switch (nodeId) {
+    case 'gest_anz': case 'gest_vec':
+      if (d.esteri) return 'esteri';
+      if (g.has('cassa')) return 'cassa';
+      if (g.has('inpdap')) return 'ago_excl';
+      if (g.has('gs')) return 'ago_gs';
+      return 'solo_ago';
+    case 'regime_anz': return p.annoInizio < 1996 ? 'misto' : 'puro';
+    case 'cp_anz': return (p.eta >= 64 && p.anni >= 20) ? 'ok64' : 'no64';
+    case 'inv_aoi_ctx': return gsPiuAltre ? 'dm' : 'ord';
+    case 'inv_inab_ctx':
+      if (inv.marittimo) return 'nav';
+      if (g.has('inpdap')) return inv.causaServizio ? 'gp46' : 'gp47';
+      if (gsPiuAltre) return 'dm';
+      return p.annoInizio >= 1996 ? 'cp335' : 'ord';
+  }
+  return null;
+}
 function showNode(nodeId) {
   S.current = nodeId;
   const node = NODES[nodeId];
   if (!node) return;
   if (!S.history.length || S.motore === undefined) S.motore = calcolaMotore();
   if (node.type === 'result') { showResult(node); return; }
+  if (node.type === 'auto') {
+    const k = chiaveAutomatica(nodeId), o = k && node.opts.find(x => x.key === k);
+    if (o) {
+      S.history.push({ nodeId, key: o.key, label: o.label, next: o.next, auto: true });
+      showNode(o.next);
+      return;
+    }
+  }
   setStep(3);
 
   // Per i superstiti non abbiamo profilo → elig senza filtri
@@ -1257,7 +1292,8 @@ function showResult(node) {
 
 function wizBack() {
   if (!S.history.length) return;
-  const last = S.history.pop();
+  let last = S.history.pop();
+  while (last.auto && S.history.length) last = S.history.pop();   // i passi automatici si saltano all'indietro
   showNode(last.nodeId);
 }
 
