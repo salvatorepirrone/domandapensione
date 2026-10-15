@@ -381,8 +381,6 @@ function calcElig(prof, decl) {
     puro:  { ok: isCP,    suggested: isCP,    why: !isCP   ? `Prima contribuzione nel ${anno}: sistema misto.` : null },
     // SITUAZIONI SPECIALI
     gravosi:  { ok: isGravosi,  suggested: isGravosi,  why: !isGravosi  ? 'Non hai dichiarato lavori gravosi o usuranti.' : null },
-    salv1:    { ok: isSalv,                             why: !isSalv     ? 'Non hai dichiarato appartenenza a platea di salvaguardia.' : null },
-    salv2:    { ok: isSalv,                             why: !isSalv     ? 'Non hai dichiarato appartenenza a platea di salvaguardia.' : null },
     amianto:  { ok: isAmianto,  suggested: isAmianto,  why: !isAmianto  ? 'Non hai dichiarato esposizione ad amianto.' : null },
     pa:       { ok: isPa && hasExcl, suggested: isPa && hasExcl,
                 why: !hasExcl ? 'Richiede contributi nella Gestione Pubblica (ex-INPDAP): non risulta nel tuo profilo.' : !isPa ? 'Non hai dichiarato accordo di esubero PA.' : null },
@@ -416,7 +414,6 @@ function calcElig(prof, decl) {
     tr_aoi:   { ok: isInvalido, why: !isInvalido ? 'Richiede titolarità di AOI in corso.' : null },
     tr_inv:   { ok: isInvalido, why: !isInvalido ? 'Richiede titolarità di pensione di invalidità.' : null },
     deroga:   { ok: anno < 1996, why: anno >= 1996 ? 'Riservato a posizioni ante-L.335/1995.' : null },
-    salv_vec: { ok: isSalv,    why: !isSalv    ? 'Non hai dichiarato appartenenza a salvaguardia.' : null },
     l205_vec: { ok: sesso === 'f', why: sesso !== 'f' ? 'Riservato alle lavoratrici.' : null },
     vit_vec:  { ok: isVittima,  why: !isVittima  ? 'Non hai dichiarato lo status di vittima.' : null },
     am_vec:   { ok: isAmianto,  why: !isAmianto  ? 'Non hai dichiarato esposizione ad amianto.' : null },
@@ -787,13 +784,21 @@ function renderStep2() {
     <div class="stitle">Situazioni speciali che modificano i requisiti</div>
     <div class="chk-group" style="margin-bottom:22px">
       ${chkItem('gravosi','Lavori gravosi o usuranti (D.Lgs.67/2011)','Mansioni faticose o pesanti riconosciute dalla normativa.','gravosi')}
-      ${chkItem('salvaguardia','Appartenenza a platea di salvaguardia esodati','L.232/2016 o L.178/2020 — verificare l\'iscrizione alla platea specifica.','salvaguardia')}
       ${chkItem('amianto','Esposizione ad amianto per oltre 10 anni','Richiede certificazione INAIL (L.208/2015).','amianto')}
       ${chkItem('precoce','Lavoratore precoce (L.232/2016)','Almeno 1 anno di contributi ante 19 anni + categoria tutelata.','precoce')}
       ${chkItem('pa','Accordo di esubero nella Pubblica Amministrazione','Accordo aziendale PA in corso di validità.','pa')}
       ${chkItem('editoria','Accordo di prepensionamento nel settore editoria','L.416/1981 o L.160/2019 — accordo sindacale aziendale validato.','editoria')}
       ${chkItem('vittima','Vittima di crimine o terrorismo (L.206/2004)','Richiede il riconoscimento preventivo dello status di vittima.','vittima')}
     </div>
+
+    <div class="sdiv"></div>
+    <details style="margin-bottom:22px">
+      <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--blue2)">Certificazione FELPE di salvaguardia (caso ormai rarissimo)</summary>
+      <div class="hint" style="margin:8px 0">Le salvaguardie riguardano platee chiuse di esodati: si propongono solo se in FELPE risulta una certificazione specifica. Nelle posizioni di prova arriva dagli archivi.</div>
+      <div class="chk-group">
+        ${chkItem('salvaguardia','Ho una certificazione di salvaguardia in FELPE','Platea esodati certificata (L. 214/2011 … L. 178/2020).','salvaguardia')}
+      </div>
+    </details>
 
     <div class="sdiv"></div>
     <div class="stitle">Contributi esteri e altre condizioni</div>
@@ -872,8 +877,7 @@ const NODES = {
   ]},
   spec_anz:{type:"question",label:"Hai una condizione speciale che modifica i requisiti?",sub:"Le condizioni non dichiarate o incompatibili con il profilo sono disabilitate.",opts:[
     {key:"gravosi", ek:"gravosi", icon:"👷",bg:"#FFF3E0",label:"Lavori gravosi o usuranti (D.Lgs.67/2011)",next:"r_gravosi"},
-    {key:"salv1",   ek:"salv1",  icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia L.232/2016 (WebDOM ✓ · Patronato —)",next:"r_salv_232"},
-    {key:"salv2",   ek:"salv2",  icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia L.178/2020",next:"r_salv_178_anz"},
+    {key:"salv",    only:"salvaguardia", icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia certificata in FELPE",desc:"La legge di salvaguardia risulta dalla certificazione.",next:"r_salv_anz"},
     {key:"amianto", ek:"amianto",icon:"☢️",bg:"#FFF3E0",label:"Esposizione amianto L.208/2015",next:"r_amianto"},
     {key:"pa",      ek:"pa",     icon:"🏛️",bg:"#E8F5E9",label:"Esubero PA",next:"r_esuberi_pa"},
     {key:"vittima", ek:"vittima",icon:"🏳️",bg:"#FFEBEE",label:"Vittima di crimine/terrorismo L.206/2004",next:"r_vittime_anz"},
@@ -902,7 +906,7 @@ const NODES = {
     {key:"tr_aoi", ek:"tr_aoi",   icon:"🏥",bg:"#F5F5F5",label:"Trasformazione da AOI",next:"r_trasf_aoi"},
     {key:"tr_inv", ek:"tr_inv",   icon:"🏥",bg:"#F5F5F5",label:"Trasformazione da pensione di invalidità",next:"r_trasf_inv"},
     {key:"deroga", ek:"deroga",   icon:"🏛️",bg:"#F5F5F5",label:"Vecchiaia in deroga (ante-L.335/1995)",next:"r_deroga"},
-    {key:"salv",   ek:"salv_vec", icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia vecchiaia L.178/2020",next:"r_salv_178_vec"},
+    {key:"salv",   only:"salvaguardia", icon:"🛡️",bg:"#F3E5F5",label:"Salvaguardia certificata in FELPE",desc:"La legge di salvaguardia risulta dalla certificazione.",next:"r_salv_vec"},
     {key:"l205",   ek:"l205_vec", icon:"👩",bg:"#FCE4EC",label:"Requisito anticipato L.205/2017 (lavoratrici — solo patronato)",next:"r_vec_l205"},
     {key:"vit",    ek:"vit_vec",  icon:"🏳️",bg:"#FFEBEE",label:"Benefici L.206/2004 (vittime di crimine/terrorismo)",next:"r_vittime_vec"},
     {key:"am",     ek:"am_vec",   icon:"☢️",bg:"#FFF3E0",label:"Maggiorazione amianto L.208/2015 (solo patronato)",next:"r_amianto_vec"},
@@ -956,26 +960,8 @@ const NODES = {
   r_flessibile:{type:"result",rtype:"warn",icon:"🔄",tag:"Vigente/diritto acquisito",title:"Pensione anticipata flessibile — Quota 103",cod:"Gr1·Pr1·Ti189/195/201/202",web:true,pat:true,callout:"Diritto maturato entro 31/12/2025. Varianti con opzione contributivo (Ti195/202): simulare l'impatto sull'assegno prima di scegliere."},
   r_opz_donna: {type:"result",rtype:"warn",icon:"👩",tag:"Opzione donna",title:"Pensione anticipata — opzione donna",cod:"Gr1·Pr1·Ti176/Ti190",web:true,pat:true,callout:"Ricalcolo interamente contributivo: può ridurre significativamente l'assegno. Simulare prima. Benefici maternità: −1 anno/figlio (max 2)."},
   r_gravosi:   {type:"result",rtype:"ok",  icon:"👷",tag:"Lavori gravosi",title:"Pensione anticipata — lavori faticosi e pesanti",cod:"Gr1·Pr1·Ti140",web:true,pat:true,desc:"D.Lgs.67/2011 — autocertificazione e verifica INPS."},
-  r_salv_232:  {type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia",title:"Pensione anticipata — Salvaguardia L.232/2016",cod:"Gr1·Pr1·Ti165",web:true,pat:false,callout:"Platea chiusa. INPS verifica l'appartenenza. Le sei platee precedenti sono solo operatori INPS."},
-  r_salv_178_anz:{type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia",title:"Pensione anticipata — Salvaguardia L.178/2020",cod:"Gr1·Pr1·Ti181",web:true,pat:true,callout:"Platea chiusa: INPS verifica l'appartenenza."},
-  r_amianto:   {type:"result",rtype:"ok",  icon:"☢️",tag:"Esposizione amianto",title:"Pensione anticipata con maggiorazione amianto",cod:"Gr1·Pr1·Ti161",web:true,pat:true,callout:"Richiede certificazione INAIL (esposizione >10 anni, L.208/2015)."},
-  r_esuberi_pa:{type:"result",rtype:"ok",  icon:"🏛️",tag:"Esuberi PA",title:"Pensione anticipata — esuberi nella PA",cod:"Gr1·Pr1·Ti147",web:true,pat:true,desc:"La L.122 Mobilità (Ti42) è solo operatori INPS."},
-  r_vittime_anz:{type:"result",rtype:"ok", icon:"🏳️",tag:"L.206/2004",title:"Pensione anticipata — vittime di terrorismo e crimini",cod:"Gr1·Pr1·Ti158/Ti159",web:true,pat:true,callout:"Richiede il preventivo riconoscimento dello status di vittima."},
-  r_precoce:   {type:"result",rtype:"ok",  icon:"🧑‍🔧",tag:"Lavoratori precoci",title:"Pensione anticipata — lavoratore precoce L.232/2016",cod:"Gr1·Pr1·Ti51",web:false,pat:true,callout:"Solo patronato. 41aa + 12 mesi ante-19 anni + categoria tutelata."},
-  r_editoria:  {type:"result",rtype:"ok",  icon:"📰",tag:"Editoria",title:"Prepensionamento editoria",cod:"Gr1·Pr1·Ti162/Ti179",web:true,pat:true,callout:"Richiede accordo sindacale aziendale validato."},
-  r_opz_contrib_anz:{type:"result",rtype:"warn",icon:"🔢",tag:"Opzione contributivo",title:"Pensione anticipata con opzione al sistema contributivo",cod:"Gr1·Pr1·Ti30",web:true,pat:true,callout:"Ricalcolo su tutta la carriera: può penalizzare l'importo. Simulare prima."},
-  r_dm282_anz: {type:"result",rtype:"warn",icon:"🔄",tag:"Computo GS — anticipata",title:"Pensione anticipata con computo D.M.282/1996",cod:"Gr1·Pr1·Ti45",web:true,pat:true,callout:"Calcolo interamente contributivo — irreversibile. Simulare prima."},
-  r_totalizzazione:{type:"result",rtype:"warn",icon:"🔢",tag:"Totalizzazione",title:"Pensione in totalizzazione (D.Lgs.42/2006)",cod:"Gestione capofila",web:true,pat:true,callout:"Calcolo interamente contributivo. Può penalizzare se hai contributi ante-1996. Confrontare con il cumulo."},
-  r_contrib_64:{type:"result",rtype:"ok",  icon:"🆕",tag:"Contributivo puro",title:"Pensione di vecchiaia anticipata a 64 anni",cod:"Gr1·Pr2·Ti8",web:true,pat:true,callout:"Assegno ≥ 2,8× assegno sociale: verificare con simulatore INPS."},
-  r_contrib_70:{type:"result",rtype:"ok",  icon:"🆕",tag:"Contributivo puro",title:"Pensione di vecchiaia a 70 anni",cod:"Gr1·Pr2·Ti17",web:true,pat:true,desc:"70 anni + 5 anni effettivi, senza soglia."},
-  r_vecchiaia: {type:"result",rtype:"ok",  icon:"🗓️",tag:"Vecchiaia",title:"Pensione di vecchiaia ordinaria",cod:"Gr1·Pr2·Ti1",web:true,pat:true,desc:"67 anni + 20 anni contributi (misto) oppure 67 anni + 5 anni effettivi (contributivo puro)."},
-  r_contrib_64_vec:{type:"result",rtype:"ok",icon:"🆕",tag:"Vecchiaia anticipata",title:"Pensione vecchiaia anticipata 64 anni (contributivo puro)",cod:"Gr1·Pr2·Ti8",web:true,pat:true,callout:"Assegno ≥ 2,8× assegno sociale: verificare con simulatore."},
-  r_opz_contrib_vec:{type:"result",rtype:"warn",icon:"🔢",tag:"Opzione contributivo",title:"Pensione di vecchiaia con opzione al contributivo",cod:"Gr1·Pr2·Ti30",web:true,pat:true,callout:"Ricalcolo contributivo: simulare prima."},
-  r_supplementare:{type:"result",rtype:"ok",icon:"🔄",tag:"Supplementare",title:"Pensione supplementare di vecchiaia",cod:"Gr1·Pr2·Ti9/Ti192",web:true,pat:true,desc:"Da presentare dopo la pensione principale."},
-  r_trasf_aoi: {type:"result",rtype:"ok",  icon:"🏥",tag:"Trasformazione",title:"Vecchiaia — trasformazione da AOI",cod:"Gr1·Pr2·Ti2",web:true,pat:true,desc:"Automatica al raggiungimento dell'età pensionabile."},
-  r_trasf_inv: {type:"result",rtype:"ok",  icon:"🏥",tag:"Trasformazione",title:"Vecchiaia — trasformazione da pensione di invalidità",cod:"Gr1·Pr2·Ti3",web:true,pat:true,desc:"Pratica storica residuale."},
-  r_deroga:    {type:"result",rtype:"ok",  icon:"🏛️",tag:"Vecchiaia in deroga",title:"Pensione di vecchiaia in deroga",cod:"Gr1·Pr2·Ti43",web:true,pat:true,desc:"Posizioni ante-L.335/1995."},
-  r_salv_178_vec:{type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia vecchiaia",title:"Vecchiaia — Salvaguardia L.178/2020",cod:"Gr1·Pr2·Ti181",web:true,pat:true,callout:"Unica platea vecchiaia nel perimetro cit./patronato."},
+  r_salv_anz:  {type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia",title:"Pensione anticipata — Salvaguardia certificata in FELPE",cod:"Gr1·Pr1·Ti144/145/146/151/155/157/160/165/181",web:true,pat:false,callout:"Platea chiusa, riconosciuta dalla certificazione FELPE. La domanda è presentata da operatori INPS (WebDOM): la legge di salvaguardia è quella indicata dalla certificazione."},
+  r_salv_vec:  {type:"result",rtype:"warn",icon:"🛡️",tag:"Salvaguardia vecchiaia",title:"Vecchiaia — Salvaguardia certificata in FELPE",cod:"Gr1·Pr2·Ti144/145/146/151/155/157/165/181",web:true,pat:false,callout:"Platea chiusa, riconosciuta dalla certificazione FELPE. La domanda è presentata da operatori INPS (WebDOM)."},
   r_vec_l205:  {type:"result",rtype:"ok",  icon:"👩",tag:"Vecchiaia lavoratrici",title:"Vecchiaia — requisito anticipato L.205/2017",cod:"Gr1·Pr2·Ti172/Ti173",web:false,pat:true,callout:"Solo patronato. Ti173 include opzione contributivo: simulare prima."},
   r_vittime_vec:{type:"result",rtype:"ok", icon:"🏳️",tag:"L.206/2004 vecchiaia",title:"Vecchiaia — benefici L.206/2004",cod:"Gr1·Pr2·Ti159",web:true,pat:true,callout:"Richiede riconoscimento status vittima."},
   r_amianto_vec:{type:"result",rtype:"ok", icon:"☢️",tag:"Amianto vecchiaia",title:"Vecchiaia con maggiorazione amianto",cod:"Gr1·Pr2·Ti161",web:false,pat:true,callout:"Solo patronato. Richiede certificazione INAIL."},
@@ -1162,7 +1148,7 @@ function showNode(nodeId) {
   const autoBadge = node.type === 'auto'
     ? `<div class="auto-badge">🔵 AUTO – INPS: rilevazione automatica dagli archivi</div>` : '';
 
-  const optsHtml = node.opts.map(o => {
+  const optsHtml = node.opts.filter(o => !o.only || S.declared[o.only]).map(o => {
     const m   = statoOpzioneMotore(o);
     const e   = m.ok === null ? (o.ek ? E[o.ek] : null) : null;
     const dis = m.ok === false || (e && !e.ok);
