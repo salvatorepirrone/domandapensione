@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motore di indirizzamento — Flusso di processo · Domanda Pensione INPS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'Titillium Web','Segoe UI',Arial,sans-serif;background:#f4f6fa;color:#1a1a2e;min-height:100vh}
+.site-header{background:#003370}
+.header-bar{display:flex;align-items:center;gap:16px;padding:12px 48px;border-bottom:3px solid #CC0000}
+.inps-badge{background:white;border-radius:4px;padding:5px 10px;font-weight:900;font-size:16px;color:#003370;letter-spacing:.04em}
+.header-title{font-size:13px;opacity:.9;line-height:1.4;color:white}
+.header-title strong{display:block;font-size:15px}
+.nav-back{background:#005CA9;padding:10px 48px}
+.nav-back a{color:rgba(255,255,255,.85);text-decoration:none;font-size:13px}
+.nav-back a:hover{color:white}
+.hero{background:linear-gradient(135deg,#1a3a6e 0%,#003370 100%);color:white;padding:48px 48px 56px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:50px;background:#f4f6fa;clip-path:ellipse(55% 100% at 50% 100%)}
+.hero-inner{max-width:900px;margin:0 auto}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-size:clamp(24px,3.5vw,36px);font-weight:700;line-height:1.2;margin-bottom:12px}
+.hero p{font-size:16px;line-height:1.7;opacity:.88;max-width:700px}
+.main{max-width:1100px;margin:0 auto;padding:44px 24px 80px}
+.section{margin-bottom:48px}
+.eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#005CA9;margin-bottom:8px}
+.section h2{font-size:24px;font-weight:700;color:#003370;margin-bottom:12px}
+.section>p{font-size:14px;color:#444;line-height:1.75;max-width:760px;margin-bottom:12px}
+.panel{background:white;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.08);padding:22px 24px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:8px 16px;border:1.5px solid #C5D3E0;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:white;color:#444;font-family:inherit}
+.tab:hover{border-color:#005CA9;color:#005CA9}
+.tab.active{background:#003370;color:white;border-color:#003370}
+#diagramma{overflow-x:auto;min-height:200px;text-align:center}
+#diagramma svg{max-width:100%;height:auto}
+.legenda{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#555;margin-top:12px}
+.legenda span::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+.l-v::before{background:#FFE08A;border:1px solid #C58B00}
+.l-e::before{background:#C8E6C9;border:1px solid #2e7d32}
+.l-n::before{background:#fff;border:1px solid #005CA9}
+/* form */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 20px}
+label.f{display:block;font-size:12px;font-weight:700;color:#003370;text-transform:uppercase;letter-spacing:.04em}
+label.f input[type=text],label.f input[type=number],label.f input[type=date],label.f select{display:block;width:100%;margin-top:5px;padding:9px 10px;border:1.5px solid #C5D3E0;border-radius:6px;font:inherit;font-size:14px;font-weight:400;color:#1a1a2e;text-transform:none;letter-spacing:0}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.4;margin:4px 0;color:#333}
+.chk input{margin-top:3px}
+fieldset{border:1px solid #dde6f0;border-radius:8px;padding:12px 14px}
+legend{font-size:12px;font-weight:700;color:#003370;text-transform:uppercase;letter-spacing:.04em;padding:0 6px}
+.btn{background:#003370;color:white;border:none;border-radius:6px;padding:11px 22px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.btn:hover{background:#005CA9}
+.btn.sec{background:white;color:#003370;border:1.5px solid #003370}
+.ramo-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}
+.rc{border:2px solid #C5D3E0;border-radius:10px;padding:14px;cursor:pointer;background:white;text-align:left;font:inherit}
+.rc:hover{border-color:#005CA9}
+.rc.sel{border-color:#003370;background:#eef3fb}
+.rc b{display:block;color:#003370;font-size:15px;margin-bottom:4px}
+.rc span{font-size:12px;color:#555;line-height:1.4}
+.hidden{display:none}
+/* risultato */
+.ris-prop{border-left:6px solid #2e7d32;background:#F1F8F2;border-radius:8px;padding:16px 20px;margin-bottom:14px}
+.ris-prop.nessuna{border-color:#C58B00;background:#FFF9E6}
+.ris-prop h3{font-size:18px;color:#1b5e20;margin-bottom:4px}
+.ris-prop.nessuna h3{color:#7B4700}
+.cod{font-family:monospace;font-size:12px;background:#e8eef7;padding:2px 6px;border-radius:4px;color:#1a3a6e}
+.cand{border:1px solid #dde6f0;border-radius:8px;padding:10px 14px;margin:8px 0;background:white}
+.cand .t{font-size:14px;font-weight:600;color:#1a1a2e}
+.cand ul{margin:6px 0 0 18px;font-size:13px;color:#555;line-height:1.5}
+.badge{display:inline-block;border-radius:10px;padding:1px 9px;font-size:11px;font-weight:700;margin-right:6px}
+.b-ok{background:#C8E6C9;color:#1b5e20}.b-ver{background:#FFE08A;color:#7B4700}.b-no{background:#eee;color:#666}
+details summary{cursor:pointer;font-weight:700;color:#003370;font-size:14px;margin:12px 0 4px}
+table.par{border-collapse:collapse;font-size:13px;width:100%}
+table.par th{background:#003370;color:white;padding:8px 10px;text-align:left;font-size:12px}
+table.par td{padding:7px 10px;border-top:1px solid #eee}
+.note{font-size:12px;color:#777;margin-top:10px;line-height:1.5}
+.site-footer{background:#003370;color:rgba(255,255,255,.7);padding:20px 48px;font-size:13px}
+.site-footer a{color:#7ECFEF;text-decoration:none}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-bar">
+    <span class="inps-badge">INPS</span>
+    <div class="header-title"><strong>Progetto di razionalizzazione delle domande di pensione</strong>Prototipo di ricerca — non è un servizio ufficiale INPS</div>
+  </div>
+  <div class="nav-back"><a href="index.html">← Torna alla home</a></div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-tag">Motore di indirizzamento</span>
+    <h1>Quale domanda puoi presentare? Il flusso del motore</h1>
+    <p>Il motore parte dal tipo di richiesta (pensione diretta, invalidità/inabilità, reversibilità/indiretta) e poi incrocia età, contributi, presenza di contributi ante 1996, gestioni di iscrizione e certificazioni FELPE per individuare la tipologia pertinente tra le 98 del catalogo.</p>
+  </div>
+</section>
+
+<main class="main">
+
+  <section class="section">
+    <div class="eyebrow">1 · Il flusso</div>
+    <h2>Diagramma di processo</h2>
+    <p>I nodi gialli sono quelli attraversati dal profilo inserito nel simulatore qui sotto; i verdi sono gli esiti. Senza profilo il diagramma mostra tutti i percorsi possibili.</p>
+    <div class="panel">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-r="diretta">Pensione diretta</button>
+        <button class="tab" data-r="invalidita">Invalidità / inabilità</button>
+        <button class="tab" data-r="superstiti">Reversibilità / indiretta</button>
+      </div>
+      <div id="diagramma">Caricamento del diagramma…</div>
+      <div class="legenda"><span class="l-n">Domanda / passo</span><span class="l-v">Nodo attraversato</span><span class="l-e">Esito</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">2 · Prova il motore</div>
+    <h2>Inserisci un profilo</h2>
+    <p>I calcoli girano interamente nel browser (<code>motore/motore.js</code>). I campi opzionali, se lasciati vuoti, producono l'esito «da verificare» e la richiesta del dato mancante.</p>
+    <div class="panel">
+      <label class="f" style="margin-bottom:14px;max-width:520px">Carica una posizione fittizia
+        <select id="esempi"><option value="">— scegli un esempio —</option></select></label>
+      <div class="ramo-cards" id="ramoCards">
+        <button class="rc sel" data-r="diretta"><b>👤 Pensione diretta</b><span>Vecchiaia, anticipata e percorsi speciali sulla tua posizione contributiva.</span></button>
+        <button class="rc" data-r="invalidita"><b>🩺 Invalidità / inabilità</b><span>Assegno di invalidità, pensione di inabilità, privilegiate.</span></button>
+        <button class="rc" data-r="superstiti"><b>👪 Reversibilità / indiretta</b><span>Per i familiari di un pensionato o di un iscritto deceduto.</span></button>
+      </div>
+
+      <div id="frmDati">
+        <div class="grid">
+          <label class="f">Sesso<select id="sesso"><option value="M">Uomo</option><option value="F">Donna</option></select></label>
+          <label class="f">Data di nascita<input type="date" id="nascita" value="1962-05-10"></label>
+          <label class="f">Contributi totali — anni<input type="number" id="cAnni" min="0" max="60" value="38"></label>
+          <label class="f">Contributi totali — mesi<input type="number" id="cMesi" min="0" max="11" value="0"></label>
+          <label class="f">Data di riferimento<input type="date" id="dataRif"></label>
+        </div>
+        <div class="grid" style="margin-top:16px">
+          <fieldset><legend>Regime</legend>
+            <label class="chk"><input type="checkbox" id="ante96" checked> Almeno un contributo versato prima del 1/1/1996</label>
+            <label class="chk"><input type="checkbox" id="pensionato"> Sono già titolare di una pensione</label>
+          </fieldset>
+          <fieldset><legend>Gestioni con contributi</legend>
+            <label class="chk"><input type="checkbox" class="gest" value="AGO" checked> AGO (FPLD, autonomi)</label>
+            <label class="chk"><input type="checkbox" class="gest" value="GS"> Gestione separata</label>
+            <label class="chk"><input type="checkbox" class="gest" value="ESCLUSIVA"> Forme esclusive (ex INPDAP)</label>
+            <label class="chk"><input type="checkbox" class="gest" value="CASSA"> Cassa professionale</label>
+            <label class="chk"><input type="checkbox" class="gest" value="ESTERO"> Periodi all'estero</label>
+          </fieldset>
+          <fieldset><legend>Certificazioni in FELPE</legend>
+            <label class="chk"><input type="checkbox" class="cert" value="PRECOCI"> Lavoratore precoce</label>
+            <label class="chk"><input type="checkbox" class="cert" value="USURANTI"> Lavori usuranti</label>
+            <label class="chk"><input type="checkbox" class="cert" value="GRAVOSI"> Attività gravose (c. 147)</label>
+            <label class="chk"><input type="checkbox" class="cert" value="AMIANTO"> Esposizione amianto</label>
+            <label class="chk"><input type="checkbox" class="cert" value="OPZIONE_CONTRIBUTIVO"> Opzione al contributivo</label>
+            <label class="chk"><input type="checkbox" class="cert" value="VITTIMA_TERRORISMO"> Vittima del terrorismo (L. 206/2004)</label>
+            <label class="chk"><input type="checkbox" class="cert" value="SALVAGUARDIA"> Salvaguardia</label>
+            <label class="f hidden" id="salvWrap" style="margin-top:6px">Quale salvaguardia
+              <select id="salv"><option value="L214">L. 214/2011</option><option value="L135">L. 135/2012</option><option value="L228">L. 228/2012</option><option value="DL102">D.L. 102/2013</option><option value="L147_2013">L. 147/2013</option><option value="L147_2014">L. 147/2014</option><option value="L208">L. 208/2015</option><option value="L232">L. 232/2016</option><option value="L178">L. 178/2020</option></select></label>
+          </fieldset>
+        </div>
+        <div class="grid" style="margin-top:16px">
+          <label class="f">Anni di contributi al 31/12/1995 — opzionale<input type="number" id="c95" min="0" max="45" placeholder="es. 12"></label>
+          <label class="f">Anni di contributi dopo il 1996 — opzionale<input type="number" id="c96" min="0" max="45" placeholder="es. 8"></label>
+          <label class="f">Figli (per le donne)<input type="number" id="figli" min="0" max="10" value="0"></label>
+        </div>
+      </div>
+
+      <div id="frmInv" class="hidden" style="margin-top:16px">
+        <div class="grid">
+          <label class="f">Capacità lavorativa<select id="grado"><option value="parziale">Ridotta a meno di un terzo (assegno di invalidità)</option><option value="assoluta">Assoluta e permanente impossibilità (inabilità)</option></select></label>
+          <label class="f">Anni di contributi nell'ultimo quinquennio — opzionale<input type="number" id="ult5" min="0" max="5" step="0.5" placeholder="es. 3"></label>
+          <fieldset><legend>Situazioni</legend>
+            <label class="chk"><input type="checkbox" id="causaServ"> Infermità per causa di servizio</label>
+            <label class="chk"><input type="checkbox" id="marittimo"> Marittimo</label>
+            <label class="chk"><input type="checkbox" id="soloRic"> Voglio solo il riconoscimento dell'invalidità</label>
+          </fieldset>
+        </div>
+      </div>
+
+      <div id="frmSup" class="hidden">
+        <div class="grid">
+          <fieldset><legend>Dante causa (persona deceduta)</legend>
+            <label class="chk"><input type="checkbox" id="dPens"> Era titolare di pensione</label>
+            <label class="chk"><input type="checkbox" id="dSupp"> Era titolare di pensione supplementare</label>
+            <label class="chk"><input type="checkbox" id="dServ"> Decesso per causa di servizio</label>
+            <label class="chk"><input type="checkbox" id="dMar"> Marittimo scomparso in mare</label>
+            <label class="chk"><input type="checkbox" id="dGS"> Aveva contributi in Gestione separata</label>
+            <label class="chk"><input type="checkbox" id="dEsc"> Gestione pubblica (ex INPDAP)</label>
+          </fieldset>
+          <label class="f">Anni di contributi del dante causa<input type="number" id="dAnni" min="0" max="60" value="16"></label>
+          <label class="f">Di cui nell'ultimo quinquennio — opzionale<input type="number" id="dUlt5" min="0" max="5" step="0.5" placeholder="es. 3"></label>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="vai">Individua la domanda</button>
+        <button class="btn sec" id="reset">Azzera il percorso</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="secRis" class="hidden">
+    <div class="eyebrow">3 · Esito</div>
+    <h2>Domanda pertinente</h2>
+    <div class="panel" id="esito">Compila il profilo e premi «Individua la domanda».</div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">4 · Regole e parametri</div>
+    <h2>Come decide il motore</h2>
+    <div class="panel">
+      <ol style="font-size:14px;line-height:1.8;margin-left:18px;color:#333">
+        <li><b>Tipo di richiesta</b>: diretta, invalidità/inabilità o superstiti. Ogni ramo ha le sue regole.</li>
+        <li><b>Titolarità di pensione</b>: chi è già pensionato (o titolare di AOI) va su supplementari e trasformazioni.</li>
+        <li><b>Regime</b>: il primo contributo prima del 1996 indica il sistema misto; altrimenti contributivo puro (64 anni, o 71 anni con 5 anni effettivi).</li>
+        <li><b>Gestioni</b>: Gestione separata con altre gestioni apre il computo ex art. 3 DM 282/1996; forme esclusive e casse rimandano a cumulo/totalizzazione; periodi esteri a prestazioni a carico di Stato estero.</li>
+        <li><b>FELPE</b>: la certificazione abilita i percorsi speciali (precoci, usuranti, gravosi, amianto, opzione al contributivo, salvaguardie, L. 206/2004). Senza certificazione questi percorsi non vengono mostrati.</li>
+        <li><b>Priorità</b>: vecchiaia accessibile → anticipata ordinaria/contributiva → percorsi speciali. L'amianto è sempre segnalato. Le tipologie marcate «da eliminare» nel catalogo non vengono proposte.</li>
+      </ol>
+      <details><summary>Parametri per anno di maturazione (speranza di vita)</summary>
+        <table class="par" id="tabPar"></table>
+        <p class="note">Adeguamento: +1 mese dal 2027, +3 mesi complessivi dal 2028 (legge di bilancio 2026). Valori da riallineare ogni anno.</p>
+      </details>
+      <p class="note">Prototipo di ricerca: il motore filtra le domande con una verifica di massima sui dati delle posizioni anagrafiche (ARCA, FELPE): i requisiti puntuali e gli importi sono verificati in istruttoria. Le regole sono in <code>motore/motore.js</code>, i test in <code>motore/test.js</code>.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">Progetto di ricerca — non è un servizio ufficiale INPS · <a href="https://github.com/salvatorepirrone/domandapensione" target="_blank">GitHub ↗</a></footer>
+
+<script src="motore/catalogo.js"></script>
+<script src="motore/esempi.js"></script>
+<script src="motore/motore.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+// ───────── Diagrammi (Mermaid). Gli id dei nodi coincidono con quelli restituiti da MotorePensioni.valuta().traccia
+const HEAD = 'flowchart TD\n';
+const STILI = `
+classDef dom fill:#ffffff,stroke:#005CA9,color:#1a1a2e;
+classDef esito fill:#C8E6C9,stroke:#2e7d32,color:#1b3d1f;
+classDef visited fill:#FFE08A,stroke:#C58B00,color:#3d2c00,stroke-width:3px;
+classDef esitoV fill:#7FD08A,stroke:#1b5e20,color:#0d2b10,stroke-width:3px;
+`;
+const DIAG = {
+  diretta: HEAD + `
+INIZIO(["Inizio"]) --> B{"Che domanda devi presentare?"}
+B -->|"Pensione diretta"| D1{"Sei già titolare di una pensione?"}
+D1 -->|"Sì"| D1S["Supplementare (dopo 5 anni) o trasformazione di AOI / invalidità in vecchiaia"]
+D1 -->|"No"| D2{"Primo contributo prima del 1/1/1996?"}
+D2 -->|"Sì"| D2M["Sistema misto: vecchiaia 67 anni + 20 di contributi; anticipata per anzianità contributiva"]
+D2 -->|"No"| D2P["Contributivo puro: 64 anni + 20; vecchiaia 67+20 o 71+5 effettivi"]
+D2M --> D3{"In quali gestioni hai contributi?"}
+D2P --> D3
+D3 --> D3a["Solo AGO: gestione singola"]
+D3 --> D3b["AGO + Gestione separata: computo art. 3 DM 282/1996 o gestione singola"]
+D3 --> D3c["Forme esclusive o casse: cumulo o totalizzazione"]
+D3 --> D3d["Periodi esteri: totalizzazione internazionale / Stato estero"]
+D3a --> D4{"Hai una certificazione in FELPE?"}
+D3b --> D4
+D3c --> D4
+D3d --> D4
+D4 -->|"Sì"| D5["Abilita i percorsi speciali: precoci, usuranti, gravosi, amianto, opzione al contributivo, salvaguardie, L. 206/2004"]
+D4 -->|"No"| D6
+D5 --> D6{"Hai età e contributi per la vecchiaia?"}
+D6 -->|"Sì"| E1(["Domanda di pensione di VECCHIAIA (0001-0002-xxxx)"])
+D6 -->|"No"| D7{"Hai i contributi per l'anticipata, o 64 anni contributiva?"}
+D7 -->|"Sì"| E2(["Domanda di pensione ANTICIPATA (0001-0001-xxxx)"])
+D7 -->|"No"| D8{"Un percorso speciale o un diritto acquisito è accessibile?"}
+D8 -->|"Sì"| E3(["Domanda del percorso speciale (precoci, usuranti, salvaguardia, Flessibile...)"])
+D8 -->|"No"| E4(["Nessuna domanda ora: si indica la data di maturazione"])
+class INIZIO,B,D1,D2,D3,D4,D6,D7,D8,D2M,D2P,D3a,D3b,D3c,D3d,D5 dom;
+class D1S,E1,E2,E3,E4 esito;
+`,
+  invalidita: HEAD + `
+INIZIO(["Inizio"]) --> B{"Che domanda devi presentare?"}
+B -->|"Invalidità / inabilità"| I1{"Vuoi solo il riconoscimento dell'invalidità?"}
+I1 -->|"Sì"| IR(["Riconoscimento di invalidità (0002-0014-0001)"])
+I1 -->|"No"| I1c{"Infermità per causa di servizio?"}
+I1c -->|"Sì"| I1S(["Privilegiate / inabilità di privilegio - gestione pubblica (0002-xxxx-0005, 0046)"])
+I1c -->|"No"| I2{"Quanto è ridotta la capacità lavorativa?"}
+I2 -->|"Meno di un terzo"| I2a["Assegno ordinario di invalidità"]
+I2 -->|"Assoluta e permanente"| I2b["Pensione di inabilità"]
+I2a --> I3{"5 anni di contributi, di cui 3 negli ultimi 5?"}
+I2b --> I3
+I3 -->|"Sì"| IE1(["Domanda accessibile: 0002-0011 / 0002-0012 (con computo se AGO + GS)"])
+I3 -->|"No"| IE2(["Non accessibile: si indica cosa manca"])
+class INIZIO,B,I1,I1c,I2,I2a,I2b,I3 dom;
+class IR,I1S,IE1,IE2 esito;
+`,
+  superstiti: HEAD + `
+INIZIO(["Inizio"]) --> B{"Che domanda devi presentare?"}
+B -->|"Reversibilità / indiretta"| S1{"Chi è deceduto era titolare di pensione?"}
+S1 -->|"Sì"| S1R(["Pensione di REVERSIBILITÀ (0003-0021-xxxx)"])
+S1 -->|"Marittimo scomparso in mare"| S1M(["Superstiti di marittimo scomparso (0003-0023-0001)"])
+S1 -->|"No"| S2{"Il dante causa aveva 15 anni, o 5 di cui 3 negli ultimi 5?"}
+S2 -->|"Sì"| S2I(["Pensione INDIRETTA (0003-0022-xxxx), con computo o privilegio se ricorrono"])
+S2 -->|"No, ma ha contributi"| S2U(["Indennità una tantum (0003-0025-0001)"])
+S2 -->|"Nessun requisito"| S2N(["Nessuna prestazione accessibile"])
+class INIZIO,B,S1,S2 dom;
+class S1R,S1M,S2I,S2U,S2N esito;
+`
+};
+const ESITI = { diretta:['D1S','E1','E2','E3','E4'], invalidita:['IR','I1S','IE1','IE2'], superstiti:['S1R','S1M','S2I','S2U','S2N'] };
+let ramoDiagramma = 'diretta', ultimaTraccia = [], contatore = 0;
+
+async function disegna() {
+  const box = document.getElementById('diagramma');
+  if (typeof mermaid === 'undefined') { box.innerHTML = '<p style="color:#CC0000">Il diagramma richiede la libreria Mermaid (connessione a cdn.jsdelivr.net).</p>'; return; }
+  let src = DIAG[ramoDiagramma].replace(/class [^;]*;\n/g, m => m); // base
+  const nodi = ultimaTraccia.filter(id => DIAG[ramoDiagramma].indexOf(id) >= 0 && new RegExp('(^|\\n|\\s|-->|\\|)' + id + '(\\W|$)').test(DIAG[ramoDiagramma]));
+  const esiti = nodi.filter(id => ESITI[ramoDiagramma].indexOf(id) >= 0);
+  const altri = nodi.filter(id => esiti.indexOf(id) < 0);
+  src += STILI;
+  if (altri.length) src += 'class ' + altri.join(',') + ' visited;\n';
+  if (esiti.length) src += 'class ' + esiti.join(',') + ' esitoV;\n';
+  try {
+    const { svg } = await mermaid.render('g' + (++contatore), src);
+    box.innerHTML = svg;
+  } catch (e) { box.innerHTML = '<p style="color:#CC0000">Errore nel disegno del diagramma: ' + e.message + '</p>'; }
+}
+if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'base', flowchart: { htmlLabels: true, curve: 'basis' }, themeVariables: { fontFamily: 'Titillium Web, Segoe UI, Arial' } });
+
+document.querySelectorAll('#tabs .tab').forEach(b => b.onclick = () => impostaRamo(b.dataset.r, false));
+
+// ───────── Form
+let ramo = 'diretta';
+function impostaRamo(r, daForm) {
+  ramoDiagramma = r;
+  document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('active', b.dataset.r === r));
+  if (daForm !== false || true) {
+    ramo = r;
+    document.querySelectorAll('#ramoCards .rc').forEach(b => b.classList.toggle('sel', b.dataset.r === r));
+    document.getElementById('frmDati').classList.toggle('hidden', r === 'superstiti');
+    document.getElementById('frmInv').classList.toggle('hidden', r !== 'invalidita');
+    document.getElementById('frmSup').classList.toggle('hidden', r !== 'superstiti');
+    document.querySelectorAll('#frmDati fieldset')[2].classList.toggle('hidden', r === 'superstiti');
+  }
+  ultimaTraccia = [];
+  disegna();
+}
+document.querySelectorAll('#ramoCards .rc').forEach(b => b.onclick = () => impostaRamo(b.dataset.r));
+document.querySelectorAll('.cert').forEach(c => c.onchange = () => {
+  document.getElementById('salvWrap').classList.toggle('hidden', !document.querySelector('.cert[value=SALVAGUARDIA]').checked);
+});
+const num = id => { const v = document.getElementById(id).value; return v === '' ? null : Number(v); };
+const val = id => document.getElementById(id).value;
+const chk = id => document.getElementById(id).checked;
+
+function costruisciProfilo() {
+  const gestioni = [...document.querySelectorAll('.gest:checked')].map(x => x.value);
+  const certificazioni = [...document.querySelectorAll('.cert:checked')].map(x => x.value);
+  if (ramo === 'superstiti') {
+    const g = []; if (chk('dGS')) g.push('GS'); if (chk('dEsc')) g.push('ESCLUSIVA'); g.push('AGO');
+    const d = { pensionato: chk('dPens'), titolareSupplementare: chk('dSupp'), causaServizio: chk('dServ'),
+      marittimoScomparso: chk('dMar'), contributi: { anni: num('dAnni') || 0 }, gestioni: g };
+    if (num('dUlt5') !== null) d.contributiUltimoQuinquennio = num('dUlt5');
+    return { ramo, superstiti: { dante: d } };
+  }
+  const p = { ramo, sesso: val('sesso'), dataNascita: val('nascita'), contributi: { anni: num('cAnni') || 0, mesi: num('cMesi') || 0 },
+    ante96: chk('ante96'), gestioni, figli: num('figli') || 0, pensionato: chk('pensionato'),
+    felpe: { certificazioni } };
+  if (certificazioni.includes('SALVAGUARDIA')) p.felpe.salvaguardia = val('salv');
+  if (num('c95') !== null) p.contributiAl1995 = num('c95');
+  if (num('c96') !== null) p.contributiDopo1996 = num('c96');
+  if (ramo === 'invalidita') {
+    p.invalidita = { grado: val('grado'), causaServizio: chk('causaServ'), marittimo: chk('marittimo'), soloRiconoscimento: chk('soloRic') };
+    if (num('ult5') !== null) p.contributiUltimoQuinquennio = num('ult5');
+  }
+  return p;
+}
+const ETICHETTE = { contributiAl1995: 'anni di contributi al 31/12/1995',
+  contributiDopo1996: 'anni di contributi dopo il 1996', contributiUltimoQuinquennio: 'contributi nell\'ultimo quinquennio',
+  'felpe.salvaguardia': 'quale salvaguardia', dataNascita: 'data di nascita', contributi: 'contributi totali' };
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function dataIt(iso) { return iso.split('-').reverse().join('/'); }
+function cardCand(c, badge, cls) {
+  const m = (c.motivi || []).map(x => '<li>' + esc(x) + '</li>').join('');
+  const mat = c.maturazione ? '<li><b>Requisiti raggiungibili dal ' + dataIt(c.maturazione) + '</b> (a contribuzione continuativa)</li>' : '';
+  const can = c.canale ? '<li>Canale: ' + [c.canale.webdom ? 'WebDOM' : null, c.canale.cittadino ? 'Cittadino/Patronato' : null].filter(Boolean).join(' · ') + '</li>' : '';
+  return '<div class="cand"><span class="badge ' + cls + '">' + badge + '</span><span class="cod">' + c.codice + '</span> <span class="t">' + esc(c.descrizione) + '</span><ul>' + m + mat + can + '</ul></div>';
+}
+function mostra(r) {
+  const box = document.getElementById('esito');
+  if (r.errore) { box.innerHTML = '<p class="note">' + esc(r.errore) + ': ' + (r.domandeAperte || []).map(d => ETICHETTE[d] || d).join(', ') + '</p>'; return; }
+  let h = '';
+  if (r.proposta) {
+    h += '<div class="ris-prop"><div class="eyebrow">Domanda da presentare</div><h3>' + esc(r.proposta.descrizione) + '</h3><span class="cod">' + r.proposta.codice + '</span><ul style="margin:8px 0 0 18px;font-size:14px;color:#333">' +
+      r.proposta.motivi.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>';
+  } else {
+    h += '<div class="ris-prop nessuna"><div class="eyebrow">Nessuna domanda accessibile con certezza</div><h3>' + (r.daVerificare.length ? 'Ci sono percorsi da verificare' : 'Requisiti non ancora raggiunti') + '</h3></div>';
+  }
+  if (r.domandeAperte.length) h += '<p class="note" style="margin-bottom:10px"><b>Per sciogliere i dubbi indica:</b> ' + r.domandeAperte.map(d => ETICHETTE[d] || d).join('; ') + '.</p>';
+  if (r.alternative.length) h += '<details open><summary>Altre domande accessibili (' + r.alternative.length + ')</summary>' + r.alternative.map(c => cardCand(c, 'Accessibile', 'b-ok')).join('') + '</details>';
+  if (r.daVerificare.length) h += '<details open><summary>Da verificare (' + r.daVerificare.length + ')</summary>' + r.daVerificare.map(c => cardCand(c, 'Da verificare', 'b-ver')).join('') + '</details>';
+  if (r.segnalazioni.length) h += '<details open><summary>Segnalazioni (' + r.segnalazioni.length + ')</summary>' + r.segnalazioni.map(c => cardCand(c, 'Segnalazione', 'b-ver')).join('') + '</details>';
+  const no = r.candidati.filter(c => c.stato === 'non_accessibile');
+  if (no.length) h += '<details><summary>Non accessibili con motivazione (' + no.length + ')</summary>' + no.map(c => cardCand(c, 'Non accessibile', 'b-no')).join('') + '</details>';
+  if (r.riepilogo) h += '<p class="note">Profilo letto: ' + r.riepilogo.eta + ' di età, ' + r.riepilogo.contributi + ' di contributi, regime ' + r.riepilogo.regime + ', gestioni ' + r.riepilogo.gestioni.join('+') + (r.riepilogo.certificazioniFelpe.length ? ', FELPE: ' + r.riepilogo.certificazioniFelpe.join(', ') : '') + ' — al ' + dataIt(r.data) + '.</p>';
+  box.innerHTML = h;
+}
+document.getElementById('vai').onclick = () => {
+  const p = costruisciProfilo();
+  const opz = val('dataRif') ? { data: val('dataRif') } : {};
+  const r = MotorePensioni.valuta(p, opz);
+  mostra(r);
+  ultimaTraccia = r.traccia || [];
+  ramoDiagramma = ramo;
+  document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('active', b.dataset.r === ramo));
+  disegna();
+  document.getElementById('diagramma').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+document.getElementById('reset').onclick = () => { ultimaTraccia = []; document.getElementById('esito').textContent = 'Compila il profilo e premi «Individua la domanda».'; disegna(); };
+
+// ───────── Parametri
+(function () {
+  const t = document.getElementById('tabPar');
+  const f = MotorePensioni.formattaMesi;
+  let h = '<tr><th>Anno</th><th>Vecchiaia</th><th>Vecchiaia contributiva</th><th>Contributiva a 64 anni</th><th>Anticipata uomini</th><th>Anticipata donne</th><th>Precoci</th></tr>';
+  [2026, 2027, 2028].forEach(a => { const p = MotorePensioni.parametri(a);
+    h += '<tr><td>' + (a === 2028 ? '2028 e oltre' : a) + '</td><td>' + f(p.vecchiaia) + '</td><td>' + f(p.vecchiaiaContributiva71) + '</td><td>' + f(p.contributiva64) + '</td><td>' + f(p.anticipataM) + '</td><td>' + f(p.anticipataF) + '</td><td>' + f(p.precoci) + '</td></tr>'; });
+  t.innerHTML = h;
+})();
+const oggi = new Date(); document.getElementById('dataRif').value = oggi.getFullYear() + '-' + String(oggi.getMonth() + 1).padStart(2, '0') + '-' + String(oggi.getDate()).padStart(2, '0');
+impostaRamo('diretta');
+
+// ───────── Posizioni fittizie
+(function () {
+  const sel = document.getElementById('esempi');
+  ESEMPI_POSIZIONI.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.nome + ' — ' + e.nota; sel.appendChild(o); });
+  const set = (id, v) => { document.getElementById(id).value = v == null ? '' : v; };
+  const setc = (id, v) => { document.getElementById(id).checked = !!v; };
+  sel.onchange = () => {
+    const e = ESEMPI_POSIZIONI.find(x => x.id === sel.value); if (!e) return;
+    const p = e.profilo; impostaRamo(p.ramo);
+    document.querySelectorAll('.gest,.cert').forEach(c => c.checked = false);
+    if (p.ramo === 'superstiti') {
+      const d = p.superstiti.dante, g = d.gestioni || [];
+      setc('dPens', d.pensionato); setc('dSupp', d.titolareSupplementare); setc('dServ', d.causaServizio); setc('dMar', d.marittimoScomparso);
+      setc('dGS', g.includes('GS')); setc('dEsc', g.includes('ESCLUSIVA'));
+      set('dAnni', d.contributi && d.contributi.anni); set('dUlt5', d.contributiUltimoQuinquennio);
+    } else {
+      set('sesso', p.sesso); set('nascita', p.dataNascita); set('cAnni', p.contributi.anni); set('cMesi', p.contributi.mesi || 0);
+      setc('ante96', p.ante96); setc('pensionato', p.pensionato); set('figli', p.figli || 0);
+      set('c95', p.contributiAl1995); set('c96', p.contributiDopo1996);
+      (p.gestioni || []).forEach(g => { const c = document.querySelector('.gest[value=' + g + ']'); if (c) c.checked = true; });
+      const cert = (p.felpe && p.felpe.certificazioni) || [];
+      cert.forEach(g => { const c = document.querySelector('.cert[value=' + g + ']'); if (c) c.checked = true; });
+      document.getElementById('salvWrap').classList.toggle('hidden', !cert.includes('SALVAGUARDIA'));
+      if (p.felpe && p.felpe.salvaguardia) set('salv', p.felpe.salvaguardia);
+      if (p.invalidita) { set('grado', p.invalidita.grado); set('ult5', p.contributiUltimoQuinquennio); }
+    }
+    document.getElementById('vai').click();
+  };
+})();
+</script>
+</body>
+</html>
