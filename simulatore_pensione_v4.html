@@ -223,6 +223,7 @@ const S = {
   history: [],       // percorso wizard
   motore: undefined, // esito del motore per la posizione corrente
   demoSup: null,     // dati del de cuius di una posizione fittizia
+  posizione: null,   // id della posizione fittizia scelta
   current: null,
 };
 
@@ -435,8 +436,18 @@ function renderStep0() {
   setStep(0);
   document.getElementById('ctitle').textContent = 'Tipo di richiesta';
   document.getElementById('cbody').innerHTML = `
+    <div class="stitle">Posizione di prova (facoltativa)</div>
+    <div class="hint" style="margin-bottom:10px">Persone fittizie descritte solo da iniziali e caratteristiche (età, contributi, gestioni, FELPE): i dati sono inventati. In un sistema reale arriverebbero dagli archivi INPS dopo il login. Se non ne scegli una, inserirai i dati a mano.</div>
+    <div class="frow" style="max-width:640px">
+      <select id="demoSel" onchange="mostraDemo()" style="width:100%;padding:10px;border:1.5px solid #C5D3E0;border-radius:6px;font:inherit">
+        <option value="">— nessuna: inserisco i dati a mano —</option>
+        ${ESEMPI_POSIZIONI.map(e => `<option value="${e.id}"${S.posizione === e.id ? ' selected' : ''}>${e.iniziali} — ${ESEMPI_POSIZIONI.descrivi(e)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="demoScheda"></div>
+    <div class="sdiv"></div>
     <p style="font-size:15px;color:var(--muted);margin-bottom:22px;line-height:1.6">
-      Prima di tutto: che cosa vuoi richiedere? Una pensione diretta di anzianità o vecchiaia, una prestazione per invalidità o inabilità, oppure una pensione ai superstiti come familiare di un iscritto o pensionato deceduto?
+      Che cosa vuoi richiedere? Una pensione diretta di anzianità o vecchiaia, una prestazione per invalidità o inabilità, oppure una pensione ai superstiti come familiare di un iscritto o pensionato deceduto?
     </p>
     <div class="choice-cards">
       <div class="choice-card" onclick="selectTipo('diretta')">
@@ -454,20 +465,11 @@ function renderStep0() {
         <div class="cc-title">Pensione ai superstiti</div>
         <div class="cc-desc">Reversibilità o pensione indiretta in qualità di familiare (coniuge, figlio, genitore) di un iscritto o pensionato deceduto.</div>
       </div>
-    </div>
-    <div class="sdiv"></div>
-    <div class="stitle">Oppure prova con una posizione fittizia</div>
-    <div class="hint" style="margin-bottom:10px">Dati inventati (nomi e codici fiscali non corrispondono a persone reali): in un sistema reale arriverebbero dagli archivi INPS dopo il login.</div>
-    <div class="frow" style="max-width:520px">
-      <select id="demoSel" onchange="mostraDemo()" style="width:100%;padding:10px;border:1.5px solid #C5D3E0;border-radius:6px;font:inherit">
-        <option value="">— scegli una posizione —</option>
-        ${ESEMPI_POSIZIONI.map(e => `<option value="${e.id}">${e.anagrafica.cognome} ${e.anagrafica.nome} — ${e.nota}</option>`).join('')}
-      </select>
-    </div>
-    <div id="demoScheda"></div>`;
+    </div>`;
+  mostraDemo();
 }
 
-// ─── Posizioni fittizie (motore/esempi.js)
+// ─── Posizioni fittizie (motore/esempi.js): descrivono il richiedente, non la domanda
 const DEMO_GEST = { AGO: 'fpld', GS: 'gs', ESCLUSIVA: 'inpdap', CASSA: 'cassa' };
 const DEMO_GEST_LBL = { AGO: 'FPLD (AGO)', GS: 'Gestione Separata', ESCLUSIVA: 'Ex-INPDAP', CASSA: 'Cassa professionale', ESTERO: 'Periodi esteri' };
 const DEMO_CERT = { PRECOCI: 'precoce', USURANTI: 'gravosi', GRAVOSI: 'gravosi', SALVAGUARDIA: 'salvaguardia', AMIANTO: 'amianto', VITTIMA_TERRORISMO: 'vittima' };
@@ -479,56 +481,56 @@ function etaAnni(iso) {
   return e;
 }
 function mostraDemo() {
-  const e = ESEMPI_POSIZIONI.find(x => x.id === document.getElementById('demoSel').value);
+  const sel = document.getElementById('demoSel'); if (!sel) return;
+  const e = ESEMPI_POSIZIONI.find(x => x.id === sel.value);
+  S.posizione = e ? e.id : null;
   const box = document.getElementById('demoScheda');
   if (!e) { box.innerHTML = ''; return; }
-  const p = e.profilo, riga = (k, v) => `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7"><div style="width:190px;color:var(--muted);font-size:13px">${k}</div><div style="font-size:14px;font-weight:600">${v}</div></div>`;
-  let h;
-  if (p.ramo === 'superstiti') {
-    const d = e.deCuius, dd = p.superstiti.dante;
-    h = riga('Richiedente', `${e.anagrafica.cognome} ${e.anagrafica.nome} (${e.relazione}) — CF ${e.anagrafica.cf}`)
-      + riga('Persona deceduta', `${d.cognome} ${d.nome}, nato nel ${d.annoNascita} — CF ${d.cf}`)
+  const p = e.personale, riga = (k, v) => `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7"><div style="width:190px;flex-shrink:0;color:var(--muted);font-size:13px">${k}</div><div style="font-size:14px;font-weight:600">${v}</div></div>`;
+  const cert = (p.felpe && p.felpe.certificazioni) || [];
+  let h = riga('Richiedente', `${e.iniziali} — CF ${e.anagrafica.cf}`)
+    + riga('Sesso · età', `${p.sesso === 'F' ? 'Donna' : 'Uomo'} · ${etaAnni(p.dataNascita)} anni`)
+    + riga('Primo contributo', e.anagrafica.annoPrimoContributo + (e.anagrafica.annoPrimoContributo < 1996 ? ' — sistema misto' : ' — contributivo puro'))
+    + riga('Anzianità contributiva', p.contributi.anni + ' anni' + (p.contributi.mesi ? ' e ' + p.contributi.mesi + ' mesi' : ''))
+    + riga('Gestioni', p.gestioni.map(g => DEMO_GEST_LBL[g]).join(', '))
+    + riga('Certificazioni in FELPE', cert.length ? cert.map(c => DEMO_CERT_LBL[c]).join(', ') : 'nessuna')
+    + (p.pensionato ? riga('Già titolare di pensione', 'Sì') : '')
+    + (p.invalidita ? riga('Capacità lavorativa', p.invalidita.grado === 'assoluta' ? 'Assoluta e permanente impossibilità' : 'Ridotta a meno di un terzo') : '');
+  if (e.deCuius) {
+    const d = e.deCuius, dd = d.dante;
+    h += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:12px 0 2px">Persona deceduta (${e.relazione})</div>`
+      + riga('De cuius', `${d.iniziali}, nato nel ${d.annoNascita} — CF ${d.cf}`)
       + riga('Primo contributo', d.annoPrimoContributo)
       + riga('Anzianità contributiva', dd.contributi.anni + ' anni' + (dd.contributiUltimoQuinquennio != null ? ' (di cui ' + dd.contributiUltimoQuinquennio + ' negli ultimi 5)' : ''))
       + riga('Titolare di pensione', dd.pensionato ? 'Sì' : 'No')
       + riga('Gestioni', (dd.gestioni || []).map(g => DEMO_GEST_LBL[g]).join(', '));
-  } else {
-    const cert = (p.felpe && p.felpe.certificazioni) || [];
-    h = riga('Assicurato', `${e.anagrafica.cognome} ${e.anagrafica.nome} — CF ${e.anagrafica.cf}`)
-      + riga('Sesso · età', `${p.sesso === 'F' ? 'Donna' : 'Uomo'} · ${etaAnni(p.dataNascita)} anni (nato il ${p.dataNascita.split('-').reverse().join('/')})`)
-      + riga('Primo contributo', e.anagrafica.annoPrimoContributo + (e.anagrafica.annoPrimoContributo < 1996 ? ' — sistema misto' : ' — contributivo puro'))
-      + riga('Anzianità contributiva', p.contributi.anni + ' anni' + (p.contributi.mesi ? ' e ' + p.contributi.mesi + ' mesi' : ''))
-      + riga('Gestioni', p.gestioni.map(g => DEMO_GEST_LBL[g]).join(', '))
-      + riga('Certificazioni in FELPE', cert.length ? cert.map(c => DEMO_CERT_LBL[c]).join(', ') : 'nessuna')
-      + (p.pensionato ? riga('Già titolare di pensione', 'Sì') : '')
-      + (p.invalidita ? riga('Capacità lavorativa', p.invalidita.grado === 'assoluta' ? 'Assoluta e permanente impossibilità' : 'Ridotta a meno di un terzo') : '');
   }
   box.innerHTML = `<div style="margin-top:14px;border:1px solid #dde6f0;border-radius:8px;padding:12px 16px;background:#f8fafd">${h}</div>
-    <div class="btn-row"><button class="btn btn-primary" onclick="simulaDemo('${e.id}')">Simula con questa posizione →</button></div>`;
+    <div class="hint" style="margin-top:8px">Ora scegli qui sotto il tipo di richiesta da simulare.</div>`;
 }
-function simulaDemo(id) {
-  const e = ESEMPI_POSIZIONI.find(x => x.id === id), p = e.profilo;
+// Avvia la simulazione per la posizione scelta e il tipo di richiesta scelto
+function applicaPosizione(tipo) {
+  const e = ESEMPI_POSIZIONI.find(x => x.id === S.posizione), p = e.personale;
   S.history = []; S.current = null; S.declared = {}; S.demoSup = null; S.motore = undefined;
-  if (p.ramo === 'superstiti') {
+  S.tipologia = tipo;
+  if (tipo === 'superstiti') {
     const d = e.deCuius;
-    S.tipologia = 'superstiti';
-    S.profile = { tipo: 'superstiti', cf: d.cf, nome: d.nome, cogn: d.cognome, nasc: String(d.annoNascita), rel: e.relazione };
-    S.demoSup = p.superstiti.dante; S.motore = undefined;
+    S.profile = { tipo: 'superstiti', cf: d.cf, nome: d.iniziali, cogn: '', nasc: String(d.annoNascita), rel: e.relazione };
+    S.demoSup = d.dante;
     setStep(3);
     document.getElementById('ctitle').textContent = 'Simulazione — Pensione ai Superstiti';
     showNode('sup_tipo');
     return;
   }
-  S.tipologia = p.ramo === 'invalidita' ? 'invalidita' : 'diretta';
   S.profile = { tipo: 'diretta', sesso: p.sesso === 'F' ? 'f' : 'm', eta: etaAnni(p.dataNascita),
     anni: p.contributi.anni + (p.contributi.mesi >= 6 ? 1 : 0), contr: p.contributi, dataNascita: p.dataNascita,
     extra: p, annoInizio: e.anagrafica.annoPrimoContributo,
     gests: p.gestioni.map(g => DEMO_GEST[g]).filter(Boolean) };
   ((p.felpe && p.felpe.certificazioni) || []).forEach(c => { if (DEMO_CERT[c]) S.declared[DEMO_CERT[c]] = true; });
-  if (p.ramo === 'invalidita') S.declared.invalido = true;
+  if (tipo === 'invalidita') S.declared.invalido = true;
   if (p.gestioni.includes('ESTERO')) S.declared.esteri = true;
   setStep(3);
-  if (p.ramo === 'invalidita') {
+  if (tipo === 'invalidita') {
     document.getElementById('ctitle').textContent = 'Simulazione — Invalidità / Inabilità';
     showNode('inv_tipo');
     return;
@@ -539,6 +541,11 @@ function simulaDemo(id) {
 
 function selectTipo(tipo) {
   S.tipologia = tipo;
+  if (S.posizione) {
+    const e = ESEMPI_POSIZIONI.find(x => x.id === S.posizione);
+    if (tipo !== 'superstiti' || e.deCuius) { applicaPosizione(tipo); return; }
+    // senza persona deceduta collegata si compilano a mano i dati del de cuius
+  }
   if (tipo === 'diretta' || tipo === 'invalidita') {
     renderStep1();
   } else {

@@ -121,8 +121,8 @@ t('tipologie obsolete mai proposte', () => {
   assert.ok(!r.candidati.some(x => obs.has(x.codice)));
 });
 const ESEMPI = require('./esempi.js');
-ESEMPI.forEach(e => t('esempio ' + e.id + ' ' + e.nome + ' → ' + e.atteso, () => {
-  const r = M.valuta(e.profilo, D);
-  assert.strictEqual(r.proposta ? r.proposta.codice : null, e.atteso);
+ESEMPI.forEach(e => t('esempio ' + e.id + ' ' + e.iniziali + ' (' + e.scenario.ramo + ') → ' + e.scenario.atteso, () => {
+  const r = M.valuta(ESEMPI.profiloMotore(e), D);
+  assert.strictEqual(r.proposta ? r.proposta.codice : null, e.scenario.atteso);
 }));
 console.log(n + ' test superati' + (process.exitCode ? ' — con errori' : ''));

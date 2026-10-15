@@ -1,24 +1,30 @@
-/* Posizioni fittizie per provare il motore e la demo (nomi, codici fiscali e dati inventati:
-   i codici fiscali usano un codice catastale inesistente e non corrispondono a persone reali).
-   `atteso` = codice della domanda proposta dal motore (null = nessuna proposta con certezza). */
+/* Posizioni fittizie per provare il motore e la demo.
+   Ogni posizione descrive le CARATTERISTICHE del richiedente (età, contributi, gestioni, certificazioni FELPE...),
+   non il tipo di domanda: quello si sceglie nel simulatore. Le persone sono indicate solo con le iniziali; i dati e i codici fiscali sono inventati
+   (i codici fiscali usano lettere di fantasia e un codice catastale inesistente: non corrispondono a persone reali).
+   `deCuius` (solo per alcune posizioni) = dati della persona deceduta, usati per le pensioni ai superstiti.
+   `scenario` = richiesta e domanda attesa usate dai test automatici (non compaiono nella demo). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.ESEMPI_POSIZIONI = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
-  return [
+  const GEST = { AGO: 'FPLD', GS: 'Gestione separata', ESCLUSIVA: 'ex-INPDAP', CASSA: 'Cassa professionale', ESTERO: 'periodi esteri' };
+  const CERT = { PRECOCI: 'lavoratore precoce', USURANTI: 'lavori usuranti', GRAVOSI: 'attività gravose', SALVAGUARDIA: 'salvaguardia', AMIANTO: 'amianto', OPZIONE_CONTRIBUTIVO: 'opzione contributivo', VITTIMA_TERRORISMO: 'vittima del terrorismo' };
+  const lista = (a, m) => a.map(x => m[x] || x).join(' + ');
+  function eta(iso, oggi) {
+    const n = new Date(iso), o = oggi || new Date();
+    let e = o.getFullYear() - n.getFullYear();
+    if (o < new Date(o.getFullYear(), n.getMonth(), n.getDate())) e--;
+    return e;
+  }
+  const lista_ = [
   {
     "id": "E01",
-    "nome": "Maria Rossi",
-    "nota": "Vecchiaia, sistema misto",
-    "atteso": "0001-0002-0001",
     "anagrafica": {
-      "cognome": "Rossi",
-      "nome": "Maria",
-      "cf": "RSSMRA58C52Z001Q",
+      "cf": "RXXMXX58C52Z001W",
       "annoPrimoContributo": 1983
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "F",
       "dataNascita": "1958-03-12",
       "contributi": {
@@ -29,21 +35,20 @@
       "gestioni": [
         "AGO"
       ]
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0002-0001"
+    },
+    "iniziali": "M. R."
   },
   {
     "id": "E02",
-    "nome": "Giuseppe Bianchi",
-    "nota": "Anticipata ordinaria (43 anni di contributi)",
-    "atteso": "0001-0001-0001",
     "anagrafica": {
-      "cognome": "Bianchi",
-      "nome": "Giuseppe",
-      "cf": "BNCGPP64A20Z002S",
+      "cf": "BXXGXX64A20Z002A",
       "annoPrimoContributo": 1983
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "M",
       "dataNascita": "1964-01-20",
       "contributi": {
@@ -54,21 +59,20 @@
       "gestioni": [
         "AGO"
       ]
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0001-0001"
+    },
+    "iniziali": "G. B."
   },
   {
     "id": "E03",
-    "nome": "Luca Verdi",
-    "nota": "Contributivo puro, 65 anni, 25 di contributi",
-    "atteso": "0001-0001-0017",
     "anagrafica": {
-      "cognome": "Verdi",
-      "nome": "Luca",
-      "cf": "VRDLCU61H01Z003G",
+      "cf": "VXXLXX61H01Z003B",
       "annoPrimoContributo": 1997
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "M",
       "dataNascita": "1961-06-01",
       "contributi": {
@@ -79,21 +83,20 @@
       "gestioni": [
         "AGO"
       ]
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0001-0017"
+    },
+    "iniziali": "L. V."
   },
   {
     "id": "E04",
-    "nome": "Anna Neri",
-    "nota": "AGO + Gestione separata, vecchiaia con alternativa del computo",
-    "atteso": "0001-0002-0001",
     "anagrafica": {
-      "cognome": "Neri",
-      "nome": "Anna",
-      "cf": "NRENNA59B50Z004M",
+      "cf": "NXXAXX59B50Z004X",
       "annoPrimoContributo": 1986
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "F",
       "dataNascita": "1959-02-10",
       "contributi": {
@@ -107,21 +110,20 @@
       ],
       "contributiAl1995": 12,
       "contributiDopo1996": 10
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0002-0001"
+    },
+    "iniziali": "A. N."
   },
   {
     "id": "E05",
-    "nome": "Paolo Gialli",
-    "nota": "Lavoratore precoce certificato in FELPE",
-    "atteso": "0001-0001-0051",
     "anagrafica": {
-      "cognome": "Gialli",
-      "nome": "Paolo",
-      "cf": "GLLPLA66D05Z005Z",
+      "cf": "GXXPXX66D05Z005Y",
       "annoPrimoContributo": 1984
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "M",
       "dataNascita": "1966-04-05",
       "contributi": {
@@ -137,21 +139,20 @@
           "PRECOCI"
         ]
       }
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0001-0051"
+    },
+    "iniziali": "P. G."
   },
   {
     "id": "E06",
-    "nome": "Carla Blu",
-    "nota": "Lavori usuranti certificati in FELPE",
-    "atteso": "0001-0001-0140",
     "anagrafica": {
-      "cognome": "Blu",
-      "nome": "Carla",
-      "cf": "BLUCRL64P41Z006L",
+      "cf": "BXXCXX64P41Z006J",
       "annoPrimoContributo": 1989
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "F",
       "dataNascita": "1964-09-01",
       "contributi": {
@@ -167,21 +168,20 @@
           "USURANTI"
         ]
       }
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0001-0140"
+    },
+    "iniziali": "C. B."
   },
   {
     "id": "E07",
-    "nome": "Franco Rosa",
-    "nota": "Salvaguardia L. 214/2011 certificata, 66 anni",
-    "atteso": "0001-0002-0144",
     "anagrafica": {
-      "cognome": "Rosa",
-      "nome": "Franco",
-      "cf": "RSOFNC60E20Z007E",
+      "cf": "RXXFXX60E20Z007X",
       "annoPrimoContributo": 1985
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "M",
       "dataNascita": "1960-05-20",
       "contributi": {
@@ -198,21 +198,20 @@
         ],
         "salvaguardia": "L214"
       }
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0002-0144"
+    },
+    "iniziali": "F. R."
   },
   {
     "id": "E08",
-    "nome": "Rita Celeste",
-    "nota": "Già pensionata: supplementare",
-    "atteso": "0001-0002-0009",
     "anagrafica": {
-      "cognome": "Celeste",
-      "nome": "Rita",
-      "cf": "CLSRTI50S43Z008S",
+      "cf": "CXXRXX50S43Z008R",
       "annoPrimoContributo": 1975
     },
-    "profilo": {
-      "ramo": "diretta",
+    "personale": {
       "sesso": "F",
       "dataNascita": "1950-11-03",
       "contributi": {
@@ -224,21 +223,20 @@
         "AGO"
       ],
       "pensionato": true
-    }
+    },
+    "scenario": {
+      "ramo": "diretta",
+      "atteso": "0001-0002-0009"
+    },
+    "iniziali": "R. C."
   },
   {
     "id": "E09",
-    "nome": "Elena Viola",
-    "nota": "Assegno ordinario di invalidità (parziale, 4 anni nell'ultimo quinquennio)",
-    "atteso": "0002-0011-0001",
     "anagrafica": {
-      "cognome": "Viola",
-      "nome": "Elena",
-      "cf": "VLILNE80L54Z009D",
+      "cf": "VXXEXX80L54Z009M",
       "annoPrimoContributo": 2012
     },
-    "profilo": {
-      "ramo": "invalidita",
+    "personale": {
       "sesso": "F",
       "dataNascita": "1980-07-14",
       "contributi": {
@@ -253,21 +251,20 @@
       "invalidita": {
         "grado": "parziale"
       }
-    }
+    },
+    "scenario": {
+      "ramo": "invalidita",
+      "atteso": "0002-0011-0001"
+    },
+    "iniziali": "E. V."
   },
   {
     "id": "E10",
-    "nome": "Marco Arancio",
-    "nota": "Inabilità con soli 4 anni di contributi: non accessibile",
-    "atteso": null,
     "anagrafica": {
-      "cognome": "Arancio",
-      "nome": "Marco",
-      "cf": "RNCMRC75A30Z010Z",
+      "cf": "AXXMXX75A30Z010I",
       "annoPrimoContributo": 2022
     },
-    "profilo": {
-      "ramo": "invalidita",
+    "personale": {
       "sesso": "M",
       "dataNascita": "1975-01-30",
       "contributi": {
@@ -282,74 +279,112 @@
       "invalidita": {
         "grado": "assoluta"
       }
-    }
+    },
+    "scenario": {
+      "ramo": "invalidita",
+      "atteso": null
+    },
+    "iniziali": "M. A."
   },
   {
     "id": "E11",
-    "nome": "Giulia Grigi",
-    "nota": "Vedova di un pensionato: reversibilità",
-    "atteso": "0003-0021-0001",
     "anagrafica": {
-      "cognome": "Grigi",
-      "nome": "Giulia",
-      "cf": "GRGGLI75A01Z011L"
+      "cf": "GXXGXX55C42Z011U",
+      "annoPrimoContributo": 1984
     },
     "relazione": "coniuge",
-    "deCuius": {
-      "cognome": "Grigi",
-      "nome": "Enrico",
-      "annoNascita": 1952,
-      "cf": "GRGNRC52D18Z011J",
-      "annoPrimoContributo": 1975
+    "personale": {
+      "sesso": "F",
+      "dataNascita": "1955-03-02",
+      "contributi": {
+        "anni": 18,
+        "mesi": 0
+      },
+      "ante96": true,
+      "gestioni": [
+        "AGO"
+      ]
     },
-    "profilo": {
-      "ramo": "superstiti",
-      "superstiti": {
-        "dante": {
-          "pensionato": true,
-          "contributi": {
-            "anni": 35
-          },
-          "gestioni": [
-            "AGO"
-          ]
-        }
+    "deCuius": {
+      "iniziali": "E. G.",
+      "annoNascita": 1952,
+      "cf": "GXXEXX52D18Z011C",
+      "annoPrimoContributo": 1975,
+      "dante": {
+        "pensionato": true,
+        "contributi": {
+          "anni": 35
+        },
+        "gestioni": [
+          "AGO"
+        ]
       }
-    }
+    },
+    "scenario": {
+      "ramo": "superstiti",
+      "atteso": "0003-0021-0001"
+    },
+    "iniziali": "G. G."
   },
   {
     "id": "E12",
-    "nome": "Sergio Marrone",
-    "nota": "Dante causa non pensionato con 16 anni: indiretta",
-    "atteso": "0003-0022-0001",
     "anagrafica": {
-      "cognome": "Marrone",
-      "nome": "Sergio",
-      "cf": "MRRSRG75A01Z012A"
+      "cf": "MXXSXX90R20Z012O",
+      "annoPrimoContributo": 2012
     },
     "relazione": "figlio",
-    "deCuius": {
-      "cognome": "Marrone",
-      "nome": "Alberto",
-      "annoNascita": 1978,
-      "cf": "MRRLRT78P09Z012G",
-      "annoPrimoContributo": 2008
+    "personale": {
+      "sesso": "M",
+      "dataNascita": "1990-10-20",
+      "contributi": {
+        "anni": 14,
+        "mesi": 0
+      },
+      "ante96": false,
+      "gestioni": [
+        "AGO"
+      ]
     },
-    "profilo": {
-      "ramo": "superstiti",
-      "superstiti": {
-        "dante": {
-          "pensionato": false,
-          "contributi": {
-            "anni": 16
-          },
-          "contributiUltimoQuinquennio": 4,
-          "gestioni": [
-            "AGO"
-          ]
-        }
+    "deCuius": {
+      "iniziali": "A. M.",
+      "annoNascita": 1962,
+      "cf": "MXXAXX62P09Z012F",
+      "annoPrimoContributo": 1988,
+      "dante": {
+        "pensionato": false,
+        "contributi": {
+          "anni": 16
+        },
+        "contributiUltimoQuinquennio": 4,
+        "gestioni": [
+          "AGO"
+        ]
       }
-    }
+    },
+    "scenario": {
+      "ramo": "superstiti",
+      "atteso": "0003-0022-0001"
+    },
+    "iniziali": "S. M."
   }
 ];
+  /* Caratteristiche in una riga, es. «66 anni, 35 anni di contributi in FPLD, primo contributo 1985 (misto)». */
+  lista_.descrivi = function (e, oggi) {
+    const p = e.personale, c = p.contributi;
+    const parti = [eta(p.dataNascita, oggi) + ' anni', c.anni + ' anni' + (c.mesi ? ' e ' + c.mesi + ' mesi' : '') + ' di contributi in ' + lista(p.gestioni, GEST),
+      'primo contributo ' + e.anagrafica.annoPrimoContributo + (e.anagrafica.annoPrimoContributo < 1996 ? ' (misto)' : ' (contributivo)')];
+    const cert = (p.felpe && p.felpe.certificazioni) || [];
+    if (cert.length) parti.push('FELPE: ' + lista(cert, CERT));
+    if (p.pensionato) parti.push('già titolare di pensione');
+    if (p.invalidita) parti.push('capacità lavorativa ' + (p.invalidita.grado === 'assoluta' ? 'assolutamente ridotta' : 'ridotta a meno di un terzo') + ' (riconosciuta)');
+    if (e.deCuius) parti.push(e.relazione + ' di ' + e.deCuius.iniziali + ', deceduto' + (e.deCuius.dante.pensionato ? ' (pensionato)' : ' (lavoratore)'));
+    return parti.join(', ');
+  };
+  /* Profilo nel formato del motore per lo scenario di prova (ramo + dati). */
+  lista_.profiloMotore = function (e, ramo) {
+    ramo = ramo || e.scenario.ramo;
+    if (ramo === 'superstiti') return e.deCuius ? { ramo: ramo, superstiti: { dante: e.deCuius.dante } } : null;
+    return Object.assign({ ramo: ramo }, JSON.parse(JSON.stringify(e.personale)));
+  };
+  return lista_;
 }));
