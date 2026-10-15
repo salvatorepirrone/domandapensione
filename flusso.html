@@ -117,7 +117,7 @@ table.par td{padding:7px 10px;border-top:1px solid #eee}
     <h2>Inserisci un profilo</h2>
     <p>I calcoli girano interamente nel browser (<code>motore/motore.js</code>). I campi opzionali, se lasciati vuoti, producono l'esito «da verificare» e la richiesta del dato mancante.</p>
     <div class="panel">
-      <label class="f" style="margin-bottom:14px;max-width:520px">Carica una posizione fittizia
+      <label class="f" style="margin-bottom:14px;max-width:520px">Carica una posizione fittizia (si applica al tipo di richiesta scelto qui sotto)
         <select id="esempi"><option value="">— scegli un esempio —</option></select></label>
       <div class="ramo-cards" id="ramoCards">
         <button class="rc sel" data-r="diretta"><b>👤 Pensione diretta</b><span>Vecchiaia, anticipata e percorsi speciali sulla tua posizione contributiva.</span></button>
@@ -425,12 +425,13 @@ impostaRamo('diretta');
 // ───────── Posizioni fittizie
 (function () {
   const sel = document.getElementById('esempi');
-  ESEMPI_POSIZIONI.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.nome + ' — ' + e.nota; sel.appendChild(o); });
+  ESEMPI_POSIZIONI.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.iniziali + ' — ' + ESEMPI_POSIZIONI.descrivi(e); sel.appendChild(o); });
   const set = (id, v) => { document.getElementById(id).value = v == null ? '' : v; };
   const setc = (id, v) => { document.getElementById(id).checked = !!v; };
   sel.onchange = () => {
     const e = ESEMPI_POSIZIONI.find(x => x.id === sel.value); if (!e) return;
-    const p = e.profilo; impostaRamo(p.ramo);
+    const p = ESEMPI_POSIZIONI.profiloMotore(e, ramo); impostaRamo(ramo);
+    if (!p) { document.getElementById('esito').textContent = 'Questa posizione non ha una persona deceduta collegata: scegli un\'altra posizione per le pensioni ai superstiti.'; return; }
     document.querySelectorAll('.gest,.cert').forEach(c => c.checked = false);
     if (p.ramo === 'superstiti') {
       const d = p.superstiti.dante, g = d.gestioni || [];
