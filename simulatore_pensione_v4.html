@@ -1307,31 +1307,86 @@ function wizBack() {
 // Usa il motore sul ramo "diretta" ma, invece di scegliere una domanda, mostra
 // quali pensioni sono già maturate e quando matureranno le altre (stima di massima).
 // ═══════════════════════════════════════════════════════════
+const CERT_GRUPPI = [
+  { id: 'estratti', titolo: 'Estratti conto', sub: 'La tua posizione assicurativa, certificata' },
+  { id: 'diritto', titolo: 'Diritto a pensione', sub: 'Verifica e certificazione del diritto' },
+  { id: 'speciali', titolo: 'Lavori particolari e anticipi', sub: 'Richiedono la certificazione in FELPE o ne attestano i requisiti' },
+  { id: 'calcoli', titolo: 'Calcoli e incentivi', sub: 'Importi di indennità e assegni, incentivi al posticipo' }
+];
+// vista: 'scheda' (descrizione + dati della posizione) | 'diritti' (tutte le pensioni) | 'vecchiaia' | 'anzianita'
+// richiede: certificazione FELPE o gestione necessaria per poterla chiedere (null = nessun vincolo)
+const CERT_TIPI = [
+  { id: 'ecc', g: 'estratti', nome: 'Estratto conto certificativo', vista: 'scheda', desc: 'Certifica i contributi e i periodi accreditati nelle gestioni in cui hai versato.' },
+  { id: 'eccn', g: 'estratti', nome: 'Estratto conto certificativo navigazione', vista: 'scheda', desc: 'Come l\'estratto conto certificativo, per i periodi di navigazione (gente di mare).', nota: 'Pertinente solo se hai periodi di navigazione: non risultano dalla posizione, da verificare.' },
+  { id: 'eci', g: 'estratti', nome: 'Estratto contributivo internazionale', vista: 'scheda', desc: 'Raccoglie i periodi di contribuzione maturati in Paesi UE o convenzionati.', richiede: { gest: 'ESTERO', msg: 'Nella posizione non risultano periodi esteri.' } },
+  { id: 'ecud', g: 'estratti', nome: 'Estratto conto certificativo d\'ufficio', vista: 'scheda', desc: 'Certificazione emessa dall\'INPS di propria iniziativa, senza domanda dell\'interessato.' },
+  { id: 'vdp', g: 'diritto', nome: 'Verifica del diritto a pensione', vista: 'diritti', desc: 'Verifica di massima di quali pensioni hai già maturato e di quando matureranno le altre.' },
+  { id: 'vec24', g: 'diritto', nome: 'Certificazione del diritto a pensione di vecchiaia (art. 24, c. 3, DL 201/2011)', vista: 'vecchiaia', desc: 'Certifica il diritto alla pensione di vecchiaia con i requisiti dell\'art. 24, comma 3.' },
+  { id: 'anz24', g: 'diritto', nome: 'Certificazione del diritto a pensione di anzianità (art. 24, c. 3, DL 201/2011)', vista: 'anzianita', desc: 'Certifica il diritto alla pensione anticipata/di anzianità con i requisiti dell\'art. 24, comma 3.' },
+  { id: 'art12', g: 'diritto', nome: 'Verifica del diritto a pensione (art. 12 DL 104/2023)', vista: 'diritti', desc: 'Verifica del diritto a pensione ai sensi dell\'art. 12 del DL 104/2023.', nota: 'Norma da verificare: la simulazione mostra il quadro generale dei diritti.' },
+  { id: 'usur', g: 'speciali', nome: 'Certificazione del beneficio derivato da lavori faticosi e usuranti', vista: 'scheda', desc: 'Attesta il beneficio spettante per le attività usuranti o gravose svolte.', richiede: { cert: 'USURANTI', msg: 'Serve la certificazione FELPE dei lavori usuranti/gravosi.' } },
+  { id: 'prec', g: 'speciali', nome: 'Certificazione del diritto a pensione per lavoratori precoci', vista: 'scheda', desc: 'Attesta il diritto alla pensione anticipata per chi ha almeno 12 mesi di contributi prima dei 19 anni.', richiede: { cert: 'PRECOCI', msg: 'Serve la certificazione FELPE di lavoratore precoce.' } },
+  { id: 'inab', g: 'speciali', nome: 'Certificazione del diritto a inabilità (art. 1, L. 232/2016)', vista: 'scheda', desc: 'Attesta il diritto alla pensione di inabilità prevista dalla L. 232/2016.', richiede: { cert: 'AMIANTO', msg: 'Serve la certificazione FELPE di esposizione all\'amianto.' }, nota: 'Collegamento con la certificazione amianto da verificare.' },
+  { id: 'apes', g: 'speciali', nome: 'Certificazione del requisito contributivo per l\'APE sociale', vista: 'scheda', desc: 'Attesta il requisito contributivo per l\'indennità APE sociale.' },
+  { id: 'apev', g: 'speciali', nome: 'Certificazione del requisito contributivo per l\'APE volontaria', vista: 'scheda', desc: 'Attesta il requisito contributivo per l\'anticipo finanziario APE volontaria.' },
+  { id: 'art41', g: 'calcoli', nome: 'Calcolo dell\'importo per indennità (art. 41, D.Lgs. 148/2015)', vista: 'scheda', desc: 'Calcola l\'importo dell\'indennità/assegno straordinario dei fondi di solidarietà.' },
+  { id: 'art4', g: 'calcoli', nome: 'Calcolo dell\'importo dell\'assegno (art. 4, L. 92/2012)', vista: 'scheda', desc: 'Calcola l\'importo dell\'assegno per i lavoratori in esodo (art. 4, L. 92/2012).' },
+  { id: 'posticipo', g: 'calcoli', nome: 'Verifica dell\'incentivo al posticipo del pensionamento', vista: 'scheda', desc: 'Verifica l\'incentivo per chi sceglie di restare al lavoro pur avendo i requisiti per la pensione.' }
+];
+function certNonRichiedibile(t) {
+  if (!t.richiede) return null;
+  const p = profiloMotore(); if (!p) return null;
+  if (t.richiede.cert && !(((p.felpe && p.felpe.certificazioni) || []).includes(t.richiede.cert))) return t.richiede.msg;
+  if (t.richiede.gest && !(p.gestioni || []).includes(t.richiede.gest)) return t.richiede.msg;
+  return null;
+}
 function renderCertificazione() {
   setStep(3);
-  document.getElementById('ctitle').textContent = 'Certificazione del diritto a pensione';
-  const M = (S.motore = calcolaMotore());
+  document.getElementById('ctitle').textContent = 'Certificazione del diritto';
+  S.certSel = null;
   const tornaA = S.posizione ? 'renderStep0()' : 'renderStep2()';
-  const torna = `<div class="btn-row"><button class="btn btn-secondary" onclick="${tornaA}">← Indietro</button><button class="btn btn-primary" onclick="restart()">Nuova simulazione</button></div>`;
-  if (!M) { document.getElementById('cbody').innerHTML = '<div class="callout">⚠️ Motore non disponibile o dati insufficienti.</div>' + torna; return; }
-  const isoIt = d => { const [y, m, g] = d.split('-'); return g + '/' + m + '/' + y; };
-  const gruppi = [
-    ['Diritto già maturato', c => c.stato === 'accessibile'],
-    ['Da verificare', c => c.stato === 'da_verificare'],
-    ['Non ancora maturato', c => c.stato === 'non_accessibile' && c.maturazione]
-  ];
+  let h = '<div class="infobox"><span style="font-size:16px;flex-shrink:0">🔵</span><div>La certificazione in FELPE è necessaria per l\'opzione al contributivo e per le domande che la richiedono (precoci, usuranti, gravosi, amianto, vittime del terrorismo). Scegli che cosa vuoi certificare.</div></div>';
+  CERT_GRUPPI.forEach(g => {
+    h += `<div class="stitle" style="margin-top:18px">${g.titolo}</div><div class="hint" style="margin-bottom:8px">${g.sub}</div><div class="choice-cards" style="flex-direction:column;gap:8px">`;
+    CERT_TIPI.filter(t => t.g === g.id).forEach(t => {
+      const no = certNonRichiedibile(t);
+      h += `<div class="choice-card" style="${no ? 'opacity:.55;cursor:not-allowed' : ''}" ${no ? '' : `onclick="mostraCertificazione('${t.id}')"`}>
+        <div class="cc-title" style="font-size:15px">${t.nome}</div>
+        <div class="cc-desc">${t.desc}</div>${no ? `<div class="cc-desc" style="color:#B71C1C;margin-top:4px">🚫 ${no}</div>` : ''}</div>`;
+    });
+    h += '</div>';
+  });
+  h += `<div class="btn-row"><button class="btn btn-secondary" onclick="${tornaA}">← Indietro</button><button class="btn btn-primary" onclick="restart()">Nuova simulazione</button></div>`;
+  document.getElementById('cbody').innerHTML = h;
+}
+function mostraCertificazione(id) {
+  const t = CERT_TIPI.find(x => x.id === id); if (!t) return;
+  S.certSel = id;
+  document.getElementById('ctitle').textContent = 'Certificazione del diritto';
+  const M = (S.motore = calcolaMotore()), p = profiloMotore();
+  const isoIt = d => d.split('-').reverse().join('/');
   const card = c => `<div style="border:1px solid #dde6f0;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#fff">
       <div style="font-weight:600;font-size:14px">${c.descrizione} <span style="color:var(--muted);font-weight:400;font-size:12px">${c.codice}</span></div>
       ${c.maturazione ? `<div style="font-size:13px;margin-top:3px">Maturazione stimata: <b>${isoIt(c.maturazione)}</b></div>` : ''}
       <div style="font-size:13px;color:var(--muted);margin-top:3px">${(c.motivi || []).join(' ')}</div></div>`;
-  let h = '<div class="infobox"><span style="font-size:16px;flex-shrink:0">🔵</span><div>Verifica di massima sui dati disponibili. La certificazione del diritto in FELPE serve per l\'opzione al contributivo e per le domande che la richiedono (precoci, usuranti, gravosi, amianto, vittime del terrorismo): la certificazione vera e propria resta in capo alla sede INPS.</div></div>';
-  let tot = 0;
-  gruppi.forEach(([tit, f]) => {
-    const l = M.tutti.filter(f); if (!l.length) return; tot += l.length;
-    h += `<div class="stitle" style="margin-top:16px">${tit}</div>` + l.map(card).join('');
-  });
-  if (!tot) h += '<div class="callout">Nessuna pensione risulta maturata o in maturazione con i dati disponibili.</div>';
-  document.getElementById('cbody').innerHTML = h + torna;
+  let h = `<div class="qblock"><div class="rtitle" style="font-size:18px;font-weight:700;margin-bottom:6px">${t.nome}</div><div style="font-size:14px;color:var(--muted);margin-bottom:10px">${t.desc}</div>`;
+  if (t.nota) h += `<div class="callout">⚠️ ${t.nota}</div>`;
+  if (p) {
+    const g = (p.gestioni || []).map(x => DEMO_GEST_LBL[x] || x).join(', ') || 'AGO';
+    h += `<div class="stitle" style="margin-top:12px">Dati della posizione</div><div style="font-size:14px;line-height:1.6">${p.sesso === 'F' ? 'Donna' : 'Uomo'}, ${etaAnni(p.dataNascita)} anni · ${p.contributi.anni} anni${p.contributi.mesi ? ' e ' + p.contributi.mesi + ' mesi' : ''} di contributi · gestioni: ${g}${p.ante96 ? ' · primo contributo ante 1996' : ' · contributivo puro'}</div>`;
+  }
+  if (t.vista !== 'scheda' && M) {
+    const fam = { vecchiaia: '0001-0002-', anzianita: '0001-0001-' }[t.vista];
+    const tutti = M.tutti.filter(c => c.tier > 0 && (!fam || c.codice.startsWith(fam)));
+    const gruppi = [['Diritto già maturato', c => c.stato === 'accessibile'], ['Da verificare', c => c.stato === 'da_verificare'], ['Non ancora maturato', c => c.stato === 'non_accessibile' && c.maturazione]];
+    let tot = 0;
+    gruppi.forEach(([tit, f]) => { const l = tutti.filter(f); if (!l.length) return; tot += l.length; h += `<div class="stitle" style="margin-top:16px">${tit}</div>` + l.map(card).join(''); });
+    if (!tot) h += '<div class="callout" style="margin-top:12px">Con i dati disponibili non risulta alcun diritto maturato o in maturazione.</div>';
+  } else if (t.vista === 'scheda') {
+    h += '<div class="hint" style="margin-top:12px">Simulazione di massima: la certificazione vera e propria è emessa dall\'INPS sulla base degli archivi.</div>';
+  }
+  h += `</div><div class="btn-row"><button class="btn btn-secondary" onclick="renderCertificazione()">← Altre certificazioni</button><button class="btn btn-primary" onclick="restart()">Nuova simulazione</button></div>`;
+  document.getElementById('cbody').innerHTML = h;
 }
 
 function restart() {
