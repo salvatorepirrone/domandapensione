@@ -1063,17 +1063,27 @@ function foglie(nodeId, seen) {
 // Stato di un'opzione secondo il motore: {ok:true|false|null, why, sug}
 function statoOpzioneMotore(o) {
   const M = S.motore; if (!M) return { ok: null };
+  const prefissoRamo = S.tipologia === 'superstiti' ? '0003-' : S.tipologia === 'invalidita' ? '0002-' : '0001-';
   let acc = false, unk = false, sug = false; const noAcc = [], np = [];
+  // Primo livello: anzianità (0001-0001-*) e vecchiaia (0001-0002-*) si decidono sulla famiglia di codici del motore,
+  // perché alcune vie (es. precoci, usuranti) non sono raggiungibili dal sottoalbero dell'opzione
+  if ((o.key === 'anz' || o.key === 'vec') && S.tipologia !== 'invalidita' && S.tipologia !== 'superstiti') {
+    const fam = o.key === 'anz' ? '0001-0001-' : '0001-0002-';
+    const ok = Object.values(M.byCod).filter(k => k.codice.startsWith(fam) && k.tier > 0 && k.stato !== 'non_accessibile');
+    if (ok.length) return { ok: true, sug: !!(M.proposta && M.proposta.codice.startsWith(fam)) };
+  }
   foglie(o.next).forEach(f => {
-    const cs = codiciNodo(f.cod); if (!cs.length) { unk = true; return; }
+    const cs = codiciNodo(f.cod); if (!cs.length) return; // foglia senza codice (segnaposto): non influisce
     cs.forEach(c => {
       const k = M.byCod[c];
       if (k) { if (k.stato !== 'non_accessibile') acc = true; else noAcc.push(k); if (M.proposta && M.proposta.codice === c) sug = true; }
-      else if (M.nonPert.has(c)) np.push(c); else unk = true;
+      else if (M.nonPert.has(c) || c.startsWith(prefissoRamo)) np.push(c); // codice del ramo senza regola nel motore (misure scadute/da eliminare): non proponibile
+      else unk = true;
     });
   });
   if (acc) return { ok: true, sug };
   if (unk || (!noAcc.length && !np.length)) return { ok: null };
+  if (!noAcc.length && o.key === 'vec') return { ok: null }; // il motore non ha regole per questa via: vale il messaggio di età/contributi
   const k = noAcc[0];
   const why = k ? k.motivi[0] + (k.maturazione ? ' Requisiti raggiungibili dal ' + k.maturazione.split('-').reverse().join('/') + '.' : '')
                 : 'Non pertinente al tuo profilo (gestioni, certificazioni FELPE o situazione non presenti).';

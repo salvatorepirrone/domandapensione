@@ -374,7 +374,7 @@
   /* Caratteristiche in una riga, es. «66 anni, 35 anni di contributi in FPLD, primo contributo 1985 (misto)». */
   lista_.descrivi = function (e, oggi) {
     const p = e.personale, c = p.contributi;
-    const parti = [eta(p.dataNascita, oggi) + ' anni', c.anni + ' anni' + (c.mesi ? ' e ' + c.mesi + ' mesi' : '') + ' di contributi in ' + lista(p.gestioni, GEST),
+    const parti = [(p.sesso === 'F' ? 'donna' : 'uomo') + ', ' + eta(p.dataNascita, oggi) + ' anni', c.anni + ' anni' + (c.mesi ? ' e ' + c.mesi + ' mesi' : '') + ' di contributi in ' + lista(p.gestioni, GEST),
       'primo contributo ' + e.anagrafica.annoPrimoContributo + (e.anagrafica.annoPrimoContributo < 1996 ? ' (misto)' : ' (contributivo)')];
     const cert = (p.felpe && p.felpe.certificazioni) || [];
     if (cert.length) parti.push('FELPE: ' + lista(cert, CERT));
