@@ -1314,7 +1314,7 @@ function renderCertificazione() {
       <div style="font-weight:600;font-size:14px">${c.descrizione} <span style="color:var(--muted);font-weight:400;font-size:12px">${c.codice}</span></div>
       ${c.maturazione ? `<div style="font-size:13px;margin-top:3px">Maturazione stimata: <b>${isoIt(c.maturazione)}</b></div>` : ''}
       <div style="font-size:13px;color:var(--muted);margin-top:3px">${(c.motivi || []).join(' ')}</div></div>`;
-  let h = '<div class="infobox"><span style="font-size:16px;flex-shrink:0">🔵</span><div>Verifica di massima sui dati disponibili. La certificazione del diritto in FELPE serve per l'opzione al contributivo e per le domande che la richiedono (precoci, usuranti, gravosi, amianto, vittime del terrorismo): la certificazione vera e propria resta in capo alla sede INPS.</div></div>';
+  let h = '<div class="infobox"><span style="font-size:16px;flex-shrink:0">🔵</span><div>Verifica di massima sui dati disponibili. La certificazione del diritto in FELPE serve per l\'opzione al contributivo e per le domande che la richiedono (precoci, usuranti, gravosi, amianto, vittime del terrorismo): la certificazione vera e propria resta in capo alla sede INPS.</div></div>';
   let tot = 0;
   gruppi.forEach(([tit, f]) => {
     const l = M.tutti.filter(f); if (!l.length) return; tot += l.length;
