@@ -59,9 +59,23 @@ def leggi():
                 regola['no'].append({'c': c, 'msg': m})
             for x in lista(req, ' | '):
                 c, m = con_messaggio(x)
-                mm = re.fullmatch(r'(eta|contr|quota)>=(.+)', c)
+                mu = re.fullmatch(r'una_tra\((.*)\)', c)
+                if mu:
+                    alt = []
+                    for a in lista(mu.group(1), ' ; '):
+                        tok, _, testo = a.partition(' : ')
+                        if not testo.strip(): raise ValueError('alternativa senza testo: ' + a)
+                        alt.append({'c': tok.strip(), 'msg': testo.strip()})
+                    if len(alt) < 2: raise ValueError('una_tra richiede almeno 2 alternative')
+                    regola['req'].append({'k': 'una_tra', 'alt': alt, 'msg': m})
+                    continue
+                mm = re.fullmatch(r'(eta|contr|quota)(?:@(\d{2})/(\d{2})/(\d{4}))?>=(.+)', c)
                 if not mm: raise ValueError('requisito non valido: ' + c)
-                regola['req'].append({'k': mm.group(1), 'min': soglia(mm.group(2)), 'msg': m})
+                req = {'k': mm.group(1), 'min': soglia(mm.group(5)), 'msg': m}
+                if mm.group(2):
+                    if mm.group(1) == 'quota': raise ValueError('quota non supporta @data')
+                    req['data'] = '%s-%s-%s' % (mm.group(4), mm.group(3), mm.group(2))
+                regola['req'].append(req)
             mc = (mancano or 'non_accessibile').strip()
             if mc not in ('non_accessibile', 'da_verificare'): raise ValueError('"Se i requisiti mancano" non valido: ' + mc)
             regola['mancano'] = mc

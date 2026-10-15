@@ -165,13 +165,6 @@
         [c.dopo96M >= 60, 'Servono almeno 5 anni di contributi dopo il 1996.', 60 - c.dopo96M]
       ], 'Computo dei periodi in altre gestioni nella Gestione separata (DM 282/1996, art. 3).');
     } },
-    { codice: '0001-0002-0043', tier: 1, valuta: function (c) {
-      if (!c.ante96 || !c.p.deroghe) return null;
-      return requisiti([
-        [c.etaM >= c.P.vecchiaia, 'Servono ' + fmt(c.P.vecchiaia) + ' di età.', c.P.vecchiaia - c.etaM],
-        [c.contrM >= 180, 'Servono 15 anni di contributi.', 180 - c.contrM]
-      ], 'Deroga Amato dichiarata: bastano 15 anni di contributi.');
-    } },
     { codice: '0001-0002-0008', tier: 1, valuta: function (c) {
       if (!(c.p.invalidita80)) return null;
       const eta = c.sesso === 'F' ? 56 * 12 : 61 * 12;
@@ -263,12 +256,6 @@
     { codice: '0001-0002-0159', tier: 3, valuta: function (c) {
       if (!c.cert.has('VITTIMA_TERRORISMO')) return null;
       return VER(['Benefici L. 206/2004 sulla vecchiaia: verificare la maggiorazione di anzianità.']);
-    } },
-    { codice: '0001-0001-0201', tier: 3, valuta: function (c) {
-      // Flessibile (quota 103), requisiti maturati entro il 31/12/2025: diritto acquisito
-      const st = c.alla(new Date(2025, 11, 31));
-      if (st.etaM < 62 * 12 || st.contrM < 41 * 12) return null;
-      return OK(['Diritto acquisito alla Flessibile (62 anni + 41 di contributi al 31/12/2025). Stima sui dati attuali: verificare in UNEX.']);
     } },
     { codice: '0001-0001-0190', tier: 3, valuta: function (c) {
       if (c.sesso !== 'F') return null;
@@ -487,6 +474,7 @@
     if ((m = /^(gest|noGest)\.(\w+)$/.exec(tok))) return (m[1] === 'gest') === c.gest.has(m[2]);
     if ((m = /^cert\.(\w+)$/.exec(tok))) return c.cert.has(m[1]);
     if ((m = /^salv\.(\w+)$/.exec(tok))) return c.cert.has('SALVAGUARDIA') && !!p.felpe && p.felpe.salvaguardia === m[1];
+    if ((m = /^deroga\.(\w+)$/.exec(tok))) return !!(p.deroga && p.deroga[m[1]]);
     if ((m = /^grado\.(\w+)$/.exec(tok))) return inv.grado === m[1];
     switch (tok) {
       case 'ante96': return c.ante96;
@@ -494,7 +482,6 @@
       case 'pensionato': return !!p.pensionato;
       case 'titolareAOI': return !!p.titolareAOI;
       case 'titolareInvalidita': return !!p.titolareInvalidita;
-      case 'deroghe': return !!p.deroghe;
       case 'invalidita80': return !!p.invalidita80;
       case 'editoria': return !!p.editoria;
       case 'vittima80': return !!p.vittimaInvalidita80;
@@ -531,11 +518,19 @@
     for (let i = 0; i < riga.no.length; i++) if (condizione(riga.no[i].c, c)) return NO([riga.no[i].msg]);
     if (!riga.req.length) return riga.esito === 'accessibile' ? OK([riga.msg]) : VER([riga.msg]);
     const lista = riga.req.map(function (r) {
+      // "Una tra": basta che sia vera almeno una delle alternative
+      if (r.k === 'una_tra') {
+        const ok = r.alt.some(function (a) { return condizione(a.c, c); });
+        return [ok, r.msg + ' ' + r.alt.map(function (a) { return '(' + a.msg + ')'; }).join(' oppure '), 0];
+      }
       const min = sogliaRichiesta(r.min, c);
-      const x = r.k === 'eta' ? c.etaM : r.k === 'contr' ? c.contrM : (c.etaM + c.contrM) / 12;
+      // requisito "alla data D": età/contributi stimati a quella data; se manca non maturerà più (nessun mese mancante)
+      const st = r.data ? c.alla(new Date(r.data + 'T00:00:00')) : null;
+      const x = r.k === 'eta' ? (st ? st.etaM : c.etaM) : r.k === 'contr' ? (st ? st.contrM : c.contrM)
+        : (c.etaM + c.contrM) / 12;
       const q = r.k === 'quota';
       const msg = r.msg.replace('{min}', q ? String(min) : fmt(min)).replace('{x}', q ? x.toFixed(1) : fmt(x));
-      return [x >= min, msg, q ? Math.ceil((min - x) * 6) : min - x];
+      return [x >= min, msg, st ? 0 : q ? Math.ceil((min - x) * 6) : min - x];
     });
     const e = requisiti(lista, riga.msg);
     if (e.stato === 'accessibile') return riga.esito === 'accessibile' ? e : VER(e.motivi);
@@ -622,6 +617,8 @@
       const cat = byCodice[r.codice];
       if (!cat) { nonPertinenti.push(r.codice + ' (non in catalogo)'); return; }
       if (cat.obsoleta) { nonPertinenti.push(r.codice); return; }
+      // Per il momento si escludono le domande presentabili solo dagli operatori INPS (non da cittadino/patronato)
+      if (!cat.cittadino && !(opzioni && opzioni.includiSoloOperatori)) { nonPertinenti.push(r.codice); return; }
       const e = r.valuta(c);
       if (!e) { nonPertinenti.push(r.codice); return; }
       const cand = {

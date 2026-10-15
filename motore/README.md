@@ -26,3 +26,11 @@ Prototipo. Il motore **filtra** le domande con una verifica di massima sui dati 
 
 ## Tabella delle regole
 Il motore non contiene più l'elenco dei requisiti: lo legge da `regole.json`. Per cambiare una soglia, una condizione o un messaggio si modifica il foglio Excel e si rigenera il file. Le regole che non si esprimono a colonne (computo in Gestione separata, opzione al contributivo, diritti acquisiti, indiretta...) hanno la colonna «Predicato» valorizzata e restano nel codice (`REGOLE_LEGACY` in `motore.js`); le colonne descrittive documentano cosa fanno. Il test di equivalenza confronta, su 4000 profili casuali, ogni riga della tabella con la logica originale scritta nel codice.
+
+### Requisiti con data e «Una tra»
+- `eta@31/12/2025>=62a` / `contr@31/12/2025>=41a`: requisito stimato alla data indicata (Flessibile 0189/0195/0201/0202). Se manca, non maturerà più (nessuna data di maturazione).
+- `una_tra(cond : testo ; cond : testo ; ...) => messaggio`: basta una alternativa vera. Usato dalla vecchiaia in deroga (0043): `deroga.contr92`, `deroga.volontari92`, `deroga.anz92` (campo `deroga` del profilo).
+- Per le righe con «Predicato» la colonna Note riporta i requisiti letti dalla lista domande.
+
+### Domande solo per operatori INPS
+Le tipologie non presentabili da cittadino/patronato (`cittadino: false` nel catalogo, es. le salvaguardie) sono escluse dal motore, salvo l'opzione `includiSoloOperatori: true`.

@@ -201,7 +201,7 @@
     },
     "scenario": {
       "ramo": "diretta",
-      "atteso": "0001-0002-0144"
+      "atteso": null
     },
     "iniziali": "F. R."
   },

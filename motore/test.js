@@ -63,8 +63,36 @@ t('senza certificazione FELPE i percorsi speciali non compaiono', () => {
   assert.ok(!r.candidati.some(x => x.codice === '0001-0001-0051'));
 });
 t('salvaguardia L. 214 certificata, 66 anni, 21 di contributi → vecchiaia con salvaguardia', () => {
-  const r = M.valuta({ ...base, dataNascita: '1960-03-01', contributi: { anni: 21 }, ante96: true, felpe: { certificazioni: ['SALVAGUARDIA'], salvaguardia: 'L214' } }, D);
+  const r = M.valuta({ ...base, dataNascita: '1960-03-01', contributi: { anni: 21 }, ante96: true, felpe: { certificazioni: ['SALVAGUARDIA'], salvaguardia: 'L214' } }, { ...D, includiSoloOperatori: true });
   assert.strictEqual(stato(r, '0001-0002-0144'), 'accessibile');
+  const r2 = M.valuta({ ...base, dataNascita: '1960-03-01', contributi: { anni: 21 }, ante96: true, felpe: { certificazioni: ['SALVAGUARDIA'], salvaguardia: 'L214' } }, D);
+  assert.strictEqual(stato(r2, '0001-0002-0144'), undefined, 'solo operatori INPS: esclusa');
+});
+t('vecchiaia in deroga: serve una tra le condizioni Amato', () => {
+  const b = { ...base, dataNascita: '1958-01-01', contributi: { anni: 16 }, ante96: true };
+  const senza = M.valuta(b, { ...D, includiSoloOperatori: true });
+  assert.strictEqual(stato(senza, '0001-0002-0043'), 'non_accessibile');
+  assert.ok(senza.candidati.find(x => x.codice === '0001-0002-0043').motivi.join(' ').includes('Serve una tra'));
+  ['contr92', 'volontari92', 'anz92'].forEach(k => {
+    const r = M.valuta({ ...b, deroga: { [k]: true } }, D);
+    assert.strictEqual(stato(r, '0001-0002-0043'), 'accessibile', k);
+  });
+  assert.strictEqual(stato(M.valuta({ ...b, contributi: { anni: 14 }, deroga: { contr92: true } }, D), '0001-0002-0043'), 'non_accessibile');
+});
+t('Flessibile: 62 anni + 41 di contributi alle date indicate', () => {
+  const b = { ...base, dataNascita: '1961-01-01', contributi: { anni: 44 }, ante96: true };
+  const r = M.valuta(b, D);
+  ['0001-0001-0189', '0001-0001-0201'].forEach(k => assert.strictEqual(stato(r, k), 'accessibile', k));
+  assert.strictEqual(stato(r, '0001-0001-0195'), undefined, 'opzione contributivo senza FELPE: non pertinente');
+  const r2 = M.valuta({ ...b, felpe: { certificazioni: ['OPZIONE_CONTRIBUTIVO'] } }, D);
+  ['0001-0001-0195', '0001-0001-0202'].forEach(k => assert.strictEqual(stato(r2, k), 'accessibile', k));
+  const r3 = M.valuta({ ...b, dataNascita: '1964-01-01' }, D);
+  assert.strictEqual(stato(r3, '0001-0001-0201'), 'non_accessibile');
+  assert.ok(!r3.candidati.find(x => x.codice === '0001-0001-0201').maturazione, 'termine scaduto: nessuna maturazione');
+});
+t('domande solo per operatori INPS escluse (salvo opzione)', () => {
+  const r = M.valuta({ ...base, dataNascita: '1957-01-01', contributi: { anni: 30 }, ante96: true }, D);
+  assert.ok(r.candidati.every(x => x.canale.cittadino));
 });
 t('amianto certificato viene sempre segnalato', () => {
   const r = M.valuta({ ...base, dataNascita: '1957-03-10', contributi: { anni: 25 }, ante96: true, felpe: { certificazioni: ['AMIANTO'] } }, D);
@@ -146,7 +174,7 @@ t('tabella e logica nel codice danno lo stesso esito su 4000 profili casuali', (
       gestioni: ['AGO'].concat(subset(['GS', 'ESCLUSIVA', 'CASSA', 'ESTERO'])),
       felpe: { certificazioni: subset(['PRECOCI', 'USURANTI', 'GRAVOSI', 'AMIANTO', 'SALVAGUARDIA', 'OPZIONE_CONTRIBUTIVO', 'VITTIMA_TERRORISMO']) },
       figli: Math.floor(rnd() * 3), pensionato: rnd() < .2, titolareAOI: rnd() < .1, titolareInvalidita: rnd() < .1,
-      deroghe: rnd() < .1, invalidita80: rnd() < .1, editoria: rnd() < .1, vittimaInvalidita80: rnd() < .5,
+      deroga: { contr92: rnd() < .1, volontari92: rnd() < .05, anz92: rnd() < .05 }, invalidita80: rnd() < .1, editoria: rnd() < .1, vittimaInvalidita80: rnd() < .5,
       invalidita: { grado: pick(['parziale', 'assoluta']), causaServizio: rnd() < .3, marittimo: rnd() < .2, soloRiconoscimento: rnd() < .15 },
       superstiti: { dante }
     };

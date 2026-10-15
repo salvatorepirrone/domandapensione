@@ -69,25 +69,42 @@
   "ramo": "diretta",
   "tier": 1,
   "se": [
-   "ante96",
-   "deroghe"
+   "ante96"
   ],
   "no": [],
   "req": [
    {
     "k": "eta",
     "min": "vecchiaia",
-    "msg": "Servono {min} di età."
+    "msg": "Servono {min} di età (hai {x})."
    },
    {
     "k": "contr",
     "min": 180,
-    "msg": "Servono 15 anni di contributi."
+    "msg": "Servono 15 anni di contributi (hai {x})."
+   },
+   {
+    "k": "una_tra",
+    "alt": [
+     {
+      "c": "deroga.contr92",
+      "msg": "15 anni di contributi maturati entro il 31/12/1992"
+     },
+     {
+      "c": "deroga.volontari92",
+      "msg": "autorizzazione ai versamenti volontari entro il 31/12/1992"
+     },
+     {
+      "c": "deroga.anz92",
+      "msg": "25 anni di anzianità assicurativa al 1992 con almeno 1 contributo prima del 1993"
+     }
+    ],
+    "msg": "Serve una tra le condizioni di deroga (deroghe Amato, art. 2 c. 3 D.Lgs. 503/1992):"
    }
   ],
   "mancano": "non_accessibile",
   "esito": "accessibile",
-  "msg": "Deroga Amato dichiarata: bastano 15 anni di contributi.",
+  "msg": "Vecchiaia in deroga: età di vecchiaia, 15 anni di contributi e una delle condizioni Amato.",
   "pred": null
  },
  {
@@ -365,11 +382,105 @@
   "tier": 3,
   "se": [],
   "no": [],
-  "req": [],
+  "req": [
+   {
+    "k": "eta",
+    "min": 744,
+    "msg": "Servono 62 anni di età al 31/12/2025 (avevi {x}).",
+    "data": "2025-12-31"
+   },
+   {
+    "k": "contr",
+    "min": 492,
+    "msg": "Servono 41 anni di contributi al 31/12/2025 (avevi {x}).",
+    "data": "2025-12-31"
+   }
+  ],
   "mancano": "non_accessibile",
   "esito": "accessibile",
-  "msg": "",
-  "pred": "flessibile"
+  "msg": "Flessibile (Quota 103): 62 anni di età e 41 di contributi maturati entro il 31/12/2025 e requisiti raggiunti entro il 31/12/2025. Stima sui dati attuali: verificare in UNEX.",
+  "pred": null
+ },
+ {
+  "codice": "0001-0001-0189",
+  "ramo": "diretta",
+  "tier": 3,
+  "se": [],
+  "no": [],
+  "req": [
+   {
+    "k": "eta",
+    "min": 744,
+    "msg": "Servono 62 anni di età al 31/12/2023 (avevi {x}).",
+    "data": "2023-12-31"
+   },
+   {
+    "k": "contr",
+    "min": 492,
+    "msg": "Servono 41 anni di contributi al 31/12/2023 (avevi {x}).",
+    "data": "2023-12-31"
+   }
+  ],
+  "mancano": "non_accessibile",
+  "esito": "accessibile",
+  "msg": "Flessibile (Quota 103): 62 anni di età e 41 di contributi maturati entro il 31/12/2023 e requisiti raggiunti entro il 31/12/2025. Stima sui dati attuali: verificare in UNEX.",
+  "pred": null
+ },
+ {
+  "codice": "0001-0001-0195",
+  "ramo": "diretta",
+  "tier": 3,
+  "se": [
+   "ante96",
+   "cert.OPZIONE_CONTRIBUTIVO"
+  ],
+  "no": [],
+  "req": [
+   {
+    "k": "eta",
+    "min": 744,
+    "msg": "Servono 62 anni di età al 31/12/2025 (avevi {x}).",
+    "data": "2025-12-31"
+   },
+   {
+    "k": "contr",
+    "min": 492,
+    "msg": "Servono 41 anni di contributi al 31/12/2025 (avevi {x}).",
+    "data": "2025-12-31"
+   }
+  ],
+  "mancano": "non_accessibile",
+  "esito": "accessibile",
+  "msg": "Flessibile (Quota 103): 62 anni di età e 41 di contributi maturati entro il 31/12/2025 e requisiti raggiunti entro il 31/12/2025. Stima sui dati attuali: verificare in UNEX. Calcolo con opzione contributivo (FELPE).",
+  "pred": null
+ },
+ {
+  "codice": "0001-0001-0202",
+  "ramo": "diretta",
+  "tier": 3,
+  "se": [
+   "ante96",
+   "cert.OPZIONE_CONTRIBUTIVO"
+  ],
+  "no": [],
+  "req": [
+   {
+    "k": "eta",
+    "min": 744,
+    "msg": "Servono 62 anni di età al 31/12/2025 (avevi {x}).",
+    "data": "2025-12-31"
+   },
+   {
+    "k": "contr",
+    "min": 492,
+    "msg": "Servono 41 anni di contributi al 31/12/2025 (avevi {x}).",
+    "data": "2025-12-31"
+   }
+  ],
+  "mancano": "non_accessibile",
+  "esito": "accessibile",
+  "msg": "Flessibile (Quota 103): 62 anni di età e 41 di contributi maturati entro il 31/12/2025 e requisiti raggiunti entro il 31/12/2025. Stima sui dati attuali: verificare in UNEX. Calcolo con opzione contributivo (FELPE).",
+  "pred": null
  },
  {
   "codice": "0001-0001-0190",

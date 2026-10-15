@@ -1035,7 +1035,7 @@ function profiloMotore() {
     ante96: pr.annoInizio < 1996, gestioni,
     felpe: { certificazioni: cert }, editoria: !!dec.editoria
   };
-  ['contributiAl1995', 'contributiDopo1996', 'contributiUltimoQuinquennio', 'figli', 'pensionato', 'invalidita', 'deroghe', 'invalidita80'].forEach(k => { if (x[k] !== undefined) p[k] = x[k]; });
+  ['contributiAl1995', 'contributiDopo1996', 'contributiUltimoQuinquennio', 'figli', 'pensionato', 'invalidita', 'deroga', 'invalidita80'].forEach(k => { if (x[k] !== undefined) p[k] = x[k]; });
   if (x.felpe && x.felpe.salvaguardia) p.felpe.salvaguardia = x.felpe.salvaguardia;
   return p;
 }
