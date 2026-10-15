@@ -69,7 +69,9 @@
   "ramo": "diretta",
   "tier": 1,
   "se": [
-   "ante96"
+   "ante96",
+   "noVecchiaiaOrdinaria",
+   "deroga.qualsiasi"
   ],
   "no": [],
   "req": [

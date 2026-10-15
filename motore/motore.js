@@ -474,12 +474,13 @@
     if ((m = /^(gest|noGest)\.(\w+)$/.exec(tok))) return (m[1] === 'gest') === c.gest.has(m[2]);
     if ((m = /^cert\.(\w+)$/.exec(tok))) return c.cert.has(m[1]);
     if ((m = /^salv\.(\w+)$/.exec(tok))) return c.cert.has('SALVAGUARDIA') && !!p.felpe && p.felpe.salvaguardia === m[1];
-    if ((m = /^deroga\.(\w+)$/.exec(tok))) return !!(p.deroga && p.deroga[m[1]]);
+    if ((m = /^deroga\.(\w+)$/.exec(tok))) return !!(p.deroga && (m[1] === 'qualsiasi' ? (p.deroga.contr92 || p.deroga.volontari92 || p.deroga.anz92) : p.deroga[m[1]]));
     if ((m = /^grado\.(\w+)$/.exec(tok))) return inv.grado === m[1];
     switch (tok) {
       case 'ante96': return c.ante96;
       case 'post95': return !c.ante96;
-      case 'pensionato': return !!p.pensionato;
+      case 'pensionato': return !!p.pensionato;   // titolare di pensione DIRETTA (vecchiaia/anzianità)
+      case 'noVecchiaiaOrdinaria': return !(c.etaM >= c.P.vecchiaia && c.contrM >= 240);
       case 'titolareAOI': return !!p.titolareAOI;
       case 'titolareInvalidita': return !!p.titolareInvalidita;
       case 'invalidita80': return !!p.invalidita80;

@@ -70,9 +70,7 @@ t('salvaguardia L. 214 certificata, 66 anni, 21 di contributi → vecchiaia con 
 });
 t('vecchiaia in deroga: serve una tra le condizioni Amato', () => {
   const b = { ...base, dataNascita: '1958-01-01', contributi: { anni: 16 }, ante96: true };
-  const senza = M.valuta(b, { ...D, includiSoloOperatori: true });
-  assert.strictEqual(stato(senza, '0001-0002-0043'), 'non_accessibile');
-  assert.ok(senza.candidati.find(x => x.codice === '0001-0002-0043').motivi.join(' ').includes('Serve una tra'));
+  assert.strictEqual(stato(M.valuta(b, D), '0001-0002-0043'), undefined, 'senza condizioni Amato non è pertinente');
   ['contr92', 'volontari92', 'anz92'].forEach(k => {
     const r = M.valuta({ ...b, deroga: { [k]: true } }, D);
     assert.strictEqual(stato(r, '0001-0002-0043'), 'accessibile', k);
@@ -93,6 +91,18 @@ t('Flessibile: 62 anni + 41 di contributi alle date indicate', () => {
 t('domande solo per operatori INPS escluse (salvo opzione)', () => {
   const r = M.valuta({ ...base, dataNascita: '1957-01-01', contributi: { anni: 30 }, ante96: true }, D);
   assert.ok(r.candidati.every(x => x.canale.cittadino));
+});
+t('deroga non mostrata se spetta la vecchiaia ordinaria o senza condizioni Amato', () => {
+  const b = { ...base, dataNascita: '1958-01-01', ante96: true, deroga: { contr92: true } };
+  assert.strictEqual(stato(M.valuta({ ...b, contributi: { anni: 25 } }, D), '0001-0002-0043'), undefined, 'ha già la vecchiaia');
+  assert.strictEqual(stato(M.valuta({ ...b, contributi: { anni: 16 } }, D), '0001-0002-0043'), 'accessibile');
+  assert.strictEqual(stato(M.valuta({ ...b, contributi: { anni: 16 }, deroga: undefined }, D), '0001-0002-0043'), undefined, 'senza condizioni Amato');
+});
+t('supplementari solo per titolari di pensione diretta', () => {
+  const b = { ...base, dataNascita: '1950-01-01', contributi: { anni: 3 }, ante96: true };
+  assert.strictEqual(stato(M.valuta(b, D), '0001-0002-0009'), undefined);
+  assert.strictEqual(stato(M.valuta({ ...b, pensionato: true }, D), '0001-0002-0009'), 'accessibile');
+  assert.strictEqual(stato(M.valuta({ ...b, titolareAOI: true }, D), '0001-0002-0009'), undefined);
 });
 t('amianto certificato viene sempre segnalato', () => {
   const r = M.valuta({ ...base, dataNascita: '1957-03-10', contributi: { anni: 25 }, ante96: true, felpe: { certificazioni: ['AMIANTO'] } }, D);
