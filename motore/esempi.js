@@ -201,7 +201,7 @@
     },
     "scenario": {
       "ramo": "diretta",
-      "atteso": "0001-0002-0144"
+      "atteso": null
     },
     "iniziali": "F. R."
   },
@@ -222,7 +222,10 @@
       "gestioni": [
         "AGO"
       ],
-      "pensionato": true
+      "pensioneDiretta": {
+        "tipo": "vecchiaia",
+        "decorrenza": 2015
+      }
     },
     "scenario": {
       "ramo": "diretta",
@@ -375,7 +378,7 @@
       'primo contributo ' + e.anagrafica.annoPrimoContributo + (e.anagrafica.annoPrimoContributo < 1996 ? ' (misto)' : ' (contributivo)')];
     const cert = (p.felpe && p.felpe.certificazioni) || [];
     if (cert.length) parti.push('FELPE: ' + lista(cert, CERT));
-    if (p.pensionato) parti.push('già titolare di pensione');
+    if (p.pensioneDiretta) parti.push('titolare di pensione diretta di ' + p.pensioneDiretta.tipo + ' dal ' + p.pensioneDiretta.decorrenza);
     if (p.invalidita) parti.push('capacità lavorativa ' + (p.invalidita.grado === 'assoluta' ? 'assolutamente ridotta' : 'ridotta a meno di un terzo') + ' (riconosciuta)');
     if (e.deCuius) parti.push(e.relazione + ' di ' + e.deCuius.iniziali + ', deceduto' + (e.deCuius.dante.pensionato ? ' (pensionato)' : ' (lavoratore)'));
     return parti.join(', ');
@@ -384,7 +387,9 @@
   lista_.profiloMotore = function (e, ramo) {
     ramo = ramo || e.scenario.ramo;
     if (ramo === 'superstiti') return e.deCuius ? { ramo: ramo, superstiti: { dante: e.deCuius.dante } } : null;
-    return Object.assign({ ramo: ramo }, JSON.parse(JSON.stringify(e.personale)));
+    const prof = Object.assign({ ramo: ramo }, JSON.parse(JSON.stringify(e.personale)));
+    if (prof.pensioneDiretta) prof.pensionato = true; // supplementari solo per i titolari di pensione diretta
+    return prof;
   };
   return lista_;
 }));

@@ -16,13 +16,16 @@
  *   3) altrimenti percorsi speciali (FELPE, diritti acquisiti);
  *   4) amianto e benefici contributivi vengono sempre segnalati.
  *
- * Tutti i requisiti numerici sono nella tabella PARAMETRI (per anno di maturazione).
+ * Le regole sono nella tabella regole.json (generata dal foglio "Regole motore" di
+ * motore/dati/Requisiti_domande_pensione.xlsx); la logica che non si esprime a colonne resta qui
+ * (REGOLE_LEGACY, richiamate per codice dalle righe con "Predicato").
+ * I parametri numerici sono nella funzione parametri() (per anno di maturazione).
  * Le tipologie marcate "obsoleta" nel catalogo non vengono mai proposte.
  */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./catalogo.js'));
-  else root.MotorePensioni = factory(root.CATALOGO_PENSIONI);
-})(typeof self !== 'undefined' ? self : this, function (CATALOGO) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./catalogo.js'), require('./regole.js'));
+  else root.MotorePensioni = factory(root.CATALOGO_PENSIONI, root.REGOLE_MOTORE);
+})(typeof self !== 'undefined' ? self : this, function (CATALOGO, TABELLA) {
   'use strict';
 
   // ───────────────────────── Parametri normativi (in mesi) ─────────────────────────
@@ -117,7 +120,7 @@
     L232: ['0165', '0165'], L178: ['0181', '0181']
   };
 
-  const REGOLE_DIRETTA = [
+  const REGOLE_DIRETTA_LEGACY = [
     // ── Tier 1: vecchiaia ──────────────────────────────────────
     { codice: '0001-0002-0001', tier: 1, valuta: function (c) {
       if (!c.ante96) return NO(['Primo contributo dopo il 1995: si applica la vecchiaia con sistema contributivo.']);
@@ -161,13 +164,6 @@
         [c.contrM >= 180, 'Servono almeno 15 anni di contributi.', 180 - c.contrM],
         [c.dopo96M >= 60, 'Servono almeno 5 anni di contributi dopo il 1996.', 60 - c.dopo96M]
       ], 'Computo dei periodi in altre gestioni nella Gestione separata (DM 282/1996, art. 3).');
-    } },
-    { codice: '0001-0002-0043', tier: 1, valuta: function (c) {
-      if (!c.ante96 || !c.p.deroghe) return null;
-      return requisiti([
-        [c.etaM >= c.P.vecchiaia, 'Servono ' + fmt(c.P.vecchiaia) + ' di età.', c.P.vecchiaia - c.etaM],
-        [c.contrM >= 180, 'Servono 15 anni di contributi.', 180 - c.contrM]
-      ], 'Deroga Amato dichiarata: bastano 15 anni di contributi.');
     } },
     { codice: '0001-0002-0008', tier: 1, valuta: function (c) {
       if (!(c.p.invalidita80)) return null;
@@ -261,12 +257,6 @@
       if (!c.cert.has('VITTIMA_TERRORISMO')) return null;
       return VER(['Benefici L. 206/2004 sulla vecchiaia: verificare la maggiorazione di anzianità.']);
     } },
-    { codice: '0001-0001-0201', tier: 3, valuta: function (c) {
-      // Flessibile (quota 103), requisiti maturati entro il 31/12/2025: diritto acquisito
-      const st = c.alla(new Date(2025, 11, 31));
-      if (st.etaM < 62 * 12 || st.contrM < 41 * 12) return null;
-      return OK(['Diritto acquisito alla Flessibile (62 anni + 41 di contributi al 31/12/2025). Stima sui dati attuali: verificare in UNEX.']);
-    } },
     { codice: '0001-0001-0190', tier: 3, valuta: function (c) {
       if (c.sesso !== 'F') return null;
       const st = c.alla(new Date(2024, 11, 31));
@@ -327,8 +317,8 @@
     };
   }
   // elimina eventuali regole di salvaguardia vuote (nessun codice vecchiaia)
-  for (let i = REGOLE_DIRETTA.length - 1; i >= 0; i--) {
-    if (REGOLE_DIRETTA[i].salvaguardia && /-0000$/.test(REGOLE_DIRETTA[i].codice)) REGOLE_DIRETTA.splice(i, 1);
+  for (let i = REGOLE_DIRETTA_LEGACY.length - 1; i >= 0; i--) {
+    if (REGOLE_DIRETTA_LEGACY[i].salvaguardia && /-0000$/.test(REGOLE_DIRETTA_LEGACY[i].codice)) REGOLE_DIRETTA_LEGACY.splice(i, 1);
   }
 
   // ───────────────────────── Regole: ramo INVALIDITA ─────────────────────────
@@ -340,7 +330,7 @@
     l.push([ult5 >= 36, 'Servono 3 anni di contributi negli ultimi 5 anni (' + fmt(ult5) + ' presenti).', 36 - ult5]);
     return { esito: requisiti(l, '5 anni di contributi, di cui 3 nell\'ultimo quinquennio.'), ult5: ult5 };
   }
-  const REGOLE_INVALIDITA = [
+  const REGOLE_INVALIDITA_LEGACY = [
     { codice: '0002-0011-0001', tier: 1, valuta: function (c) {
       const inv = c.p.invalidita || {};
       if (inv.grado !== 'parziale') return null;
@@ -424,7 +414,7 @@
     if (tot >= 60 && ult5 === null) return VER(['Il dante causa aveva almeno 5 anni: verificare 3 anni nell\'ultimo quinquennio.']);
     return NO(['Il dante causa non aveva i requisiti (15 anni, oppure 5 di cui 3 nell\'ultimo quinquennio): ha ' + fmt(tot) + '.'], 0);
   }
-  const REGOLE_SUPERSTITI = [
+  const REGOLE_SUPERSTITI_LEGACY = [
     { codice: '0003-0021-0001', tier: 1, valuta: function (c) {
       const d = dante(c); if (!d.pensionato) return null;
       return OK(['Il dante causa era titolare di pensione: reversibilità.']);
@@ -469,6 +459,102 @@
       return e.stato === 'non_accessibile' ? VER(['Il dante causa non ha i requisiti per l\'indiretta: valutare l\'indennità una tantum.']) : null;
     } }
   ];
+
+
+  // ───────────────────────── Interprete della tabella delle regole ─────────────────────────
+  // Ogni riga di regole.json: { codice, ramo, tier, se[], no[{c,msg}], req[{k,min,msg}], mancano, esito, msg, pred }
+  // - se: condizioni tutte vere, altrimenti la tipologia non è pertinente (null)
+  // - no: se una condizione è vera → non accessibile con quel motivo
+  // - req: requisiti numerici (eta, contr, quota); mancano → non_accessibile (o da_verificare)
+  // - pred: la logica è nel codice (REGOLE_LEGACY, per codice)
+  function condizione(tok, c) {
+    const p = c.p, inv = p.invalidita || {}, d = (p.superstiti && p.superstiti.dante) || {};
+    const dg = new Set((d.gestioni || []).map(function (x) { return String(x).toUpperCase(); }));
+    let m;
+    if ((m = /^(gest|noGest)\.(\w+)$/.exec(tok))) return (m[1] === 'gest') === c.gest.has(m[2]);
+    if ((m = /^cert\.(\w+)$/.exec(tok))) return c.cert.has(m[1]);
+    if ((m = /^salv\.(\w+)$/.exec(tok))) return c.cert.has('SALVAGUARDIA') && !!p.felpe && p.felpe.salvaguardia === m[1];
+    if ((m = /^deroga\.(\w+)$/.exec(tok))) return !!(p.deroga && (m[1] === 'qualsiasi' ? (p.deroga.contr92 || p.deroga.volontari92 || p.deroga.anz92) : p.deroga[m[1]]));
+    if ((m = /^grado\.(\w+)$/.exec(tok))) return inv.grado === m[1];
+    switch (tok) {
+      case 'ante96': return c.ante96;
+      case 'post95': return !c.ante96;
+      case 'pensionato': return !!p.pensionato;   // titolare di pensione DIRETTA (vecchiaia/anzianità)
+      case 'noVecchiaiaOrdinaria': return !(c.etaM >= c.P.vecchiaia && c.contrM >= 240);
+      case 'titolareAOI': return !!p.titolareAOI;
+      case 'titolareInvalidita': return !!p.titolareInvalidita;
+      case 'invalidita80': return !!p.invalidita80;
+      case 'editoria': return !!p.editoria;
+      case 'vittima80': return !!p.vittimaInvalidita80;
+      case 'noVittima80': return !p.vittimaInvalidita80;
+      case 'sesso.F': return c.sesso === 'F';
+      case 'gsPiuAltre': return c.gsPiuAltre;
+      case 'causaServizio': return !!inv.causaServizio;
+      case 'noCausaServizio': return !inv.causaServizio;
+      case 'marittimo': return !!inv.marittimo;
+      case 'soloRiconoscimento': return !!inv.soloRiconoscimento;
+      case 'dante.pensionato': return !!d.pensionato;
+      case 'dante.noPensionato': return !d.pensionato;
+      case 'dante.supplementare': return !!d.titolareSupplementare;
+      case 'dante.causaServizio': return !!d.causaServizio;
+      case 'dante.marittimoScomparso': return !!d.marittimoScomparso;
+      case 'noMarittimoScomparso': return !d.marittimoScomparso;
+      case 'dante.inabile': return !!d.inabileAlDecesso;
+      case 'dante.estero': return dg.has('ESTERO');
+      case 'dante.esclusiva': return dg.has('ESCLUSIVA');
+      case 'dante.gsPiuAltre': return dg.has('GS') && (dg.has('AGO') || dg.has('ESCLUSIVA') || dg.has('CASSA'));
+    }
+    throw new Error('Condizione sconosciuta nella tabella delle regole: ' + tok);
+  }
+  function sogliaRichiesta(m, c) {
+    if (typeof m === 'number') return m;
+    if (typeof m === 'object') return c.sesso === 'F' ? sogliaRichiesta(m.F, c) : sogliaRichiesta(m.M, c);
+    const par = { vecchiaia: c.P.vecchiaia, vecchiaiaContributiva71: c.P.vecchiaiaContributiva71, contributiva64: c.P.contributiva64,
+      anticipata: c.sogliaAnt, precoci: c.P.precoci, gravosiEta: c.P.gravosiEta, usurantiEta: c.P.usurantiEta };
+    if (!(m in par)) throw new Error('Parametro normativo sconosciuto: ' + m);
+    return par[m];
+  }
+  function valutaRiga(riga, c) {
+    if (!riga.se.every(function (t) { return condizione(t, c); })) return null;
+    for (let i = 0; i < riga.no.length; i++) if (condizione(riga.no[i].c, c)) return NO([riga.no[i].msg]);
+    if (!riga.req.length) return riga.esito === 'accessibile' ? OK([riga.msg]) : VER([riga.msg]);
+    const lista = riga.req.map(function (r) {
+      // "Una tra": basta che sia vera almeno una delle alternative
+      if (r.k === 'una_tra') {
+        const ok = r.alt.some(function (a) { return condizione(a.c, c); });
+        return [ok, r.msg + ' ' + r.alt.map(function (a) { return '(' + a.msg + ')'; }).join(' oppure '), 0];
+      }
+      const min = sogliaRichiesta(r.min, c);
+      // requisito "alla data D": età/contributi stimati a quella data; se manca non maturerà più (nessun mese mancante)
+      const st = r.data ? c.alla(new Date(r.data + 'T00:00:00')) : null;
+      const x = r.k === 'eta' ? (st ? st.etaM : c.etaM) : r.k === 'contr' ? (st ? st.contrM : c.contrM)
+        : (c.etaM + c.contrM) / 12;
+      const q = r.k === 'quota';
+      const msg = r.msg.replace('{min}', q ? String(min) : fmt(min)).replace('{x}', q ? x.toFixed(1) : fmt(x));
+      return [x >= min, msg, st ? 0 : q ? Math.ceil((min - x) * 6) : min - x];
+    });
+    const e = requisiti(lista, riga.msg);
+    if (e.stato === 'accessibile') return riga.esito === 'accessibile' ? e : VER(e.motivi);
+    return riga.mancano === 'da_verificare' ? VER(e.motivi) : e;
+  }
+  const LEGACY = {};
+  [REGOLE_DIRETTA_LEGACY, REGOLE_INVALIDITA_LEGACY, REGOLE_SUPERSTITI_LEGACY].forEach(function (arr) {
+    arr.forEach(function (r) { LEGACY[r.codice] = r; });
+  });
+  function regoleDaTabella(ramo, legacy) {
+    if (!TABELLA) return legacy;
+    return TABELLA.filter(function (r) { return r.ramo === ramo; }).map(function (r) {
+      if (r.pred) {
+        const l = LEGACY[r.codice];
+        if (!l) throw new Error('Predicato mancante nel codice per ' + r.codice);
+        return { codice: r.codice, tier: r.tier, valuta: l.valuta };
+      }
+      return { codice: r.codice, tier: r.tier, valuta: function (c) { return valutaRiga(r, c); } };
+    });
+  }
+  const REGOLE_DIRETTA = regoleDaTabella('diretta', REGOLE_DIRETTA_LEGACY);
+  const REGOLE_INVALIDITA = regoleDaTabella('invalidita', REGOLE_INVALIDITA_LEGACY);
+  const REGOLE_SUPERSTITI = regoleDaTabella('superstiti', REGOLE_SUPERSTITI_LEGACY);
 
   // ───────────────────────── Traccia del percorso (id dei nodi del diagramma) ─────────────────────────
   function traccia(c, ramo, candidati) {
@@ -532,6 +618,8 @@
       const cat = byCodice[r.codice];
       if (!cat) { nonPertinenti.push(r.codice + ' (non in catalogo)'); return; }
       if (cat.obsoleta) { nonPertinenti.push(r.codice); return; }
+      // Per il momento si escludono le domande presentabili solo dagli operatori INPS (non da cittadino/patronato)
+      if (!cat.cittadino && !(opzioni && opzioni.includiSoloOperatori)) { nonPertinenti.push(r.codice); return; }
       const e = r.valuta(c);
       if (!e) { nonPertinenti.push(r.codice); return; }
       const cand = {
@@ -588,5 +676,13 @@
     };
   }
 
-  return { valuta: valuta, parametri: parametri, formattaMesi: fmt, catalogo: CATALOGO };
+  return {
+    valuta: valuta, parametri: parametri, formattaMesi: fmt, catalogo: CATALOGO,
+    // per i test di equivalenza tra tabella e logica scritta nel codice
+    _interno: {
+      contesto: contesto,
+      legacy: { diretta: REGOLE_DIRETTA_LEGACY, invalidita: REGOLE_INVALIDITA_LEGACY, superstiti: REGOLE_SUPERSTITI_LEGACY },
+      tabella: { diretta: REGOLE_DIRETTA, invalidita: REGOLE_INVALIDITA, superstiti: REGOLE_SUPERSTITI }
+    }
+  };
 });
