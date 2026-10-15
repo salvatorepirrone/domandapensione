@@ -448,7 +448,7 @@ function renderStep0() {
     <div id="demoScheda"></div>
     <div class="sdiv"></div>
     <p style="font-size:15px;color:var(--muted);margin-bottom:22px;line-height:1.6">
-      Che cosa vuoi richiedere? Una pensione diretta di anzianità o vecchiaia, una prestazione per invalidità o inabilità, oppure una pensione ai superstiti come familiare di un iscritto o pensionato deceduto?
+      Che cosa vuoi richiedere? Una pensione diretta di anzianità o vecchiaia, una prestazione per invalidità o inabilità, una pensione ai superstiti come familiare di un iscritto o pensionato deceduto, oppure la certificazione del tuo diritto a pensione?
     </p>
     <div class="choice-cards">
       <div class="choice-card" onclick="selectTipo('diretta')">
@@ -465,6 +465,11 @@ function renderStep0() {
         <div class="cc-icon">🌿</div>
         <div class="cc-title">Pensione ai superstiti</div>
         <div class="cc-desc">Reversibilità o pensione indiretta in qualità di familiare (coniuge, figlio, genitore) di un iscritto o pensionato deceduto.</div>
+      </div>
+      <div class="choice-card" onclick="selectTipo('certificazione')">
+        <div class="cc-icon">📜</div>
+        <div class="cc-title">Certificazione del diritto</div>
+        <div class="cc-desc">Verifica anticipata del diritto a pensione: quali pensioni hai già maturato e quando matureranno le altre.</div>
       </div>
     </div>`;
   mostraDemo();
@@ -531,6 +536,7 @@ function applicaPosizione(tipo) {
   if (tipo === 'invalidita') S.declared.invalido = true;
   if (p.gestioni.includes('ESTERO')) S.declared.esteri = true;
   setStep(3);
+  if (tipo === 'certificazione') { renderCertificazione(); return; }
   if (tipo === 'invalidita') {
     document.getElementById('ctitle').textContent = 'Simulazione — Invalidità / Inabilità';
     showNode('inv_tipo');
@@ -547,7 +553,7 @@ function selectTipo(tipo) {
     if (tipo !== 'superstiti' || e.deCuius) { applicaPosizione(tipo); return; }
     // senza persona deceduta collegata si compilano a mano i dati del de cuius
   }
-  if (tipo === 'diretta' || tipo === 'invalidita') {
+  if (tipo === 'diretta' || tipo === 'invalidita' || tipo === 'certificazione') {
     renderStep1();
   } else {
     renderStepSuperstiti();
@@ -814,6 +820,7 @@ function submitStep2() {
   S.declared = {};
   checked.forEach(v => { S.declared[v] = true; });
   S.history = []; S.current = null; S.motore = undefined;
+  if (S.tipologia === 'certificazione') { renderCertificazione(); return; }
   document.getElementById('ctitle').textContent = 'Simulazione di indirizzamento';
   setStep(3);
   showNode('start_diretta');
@@ -1260,6 +1267,38 @@ function wizBack() {
   if (!S.history.length) return;
   const last = S.history.pop();
   showNode(last.nodeId);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CERTIFICAZIONE DEL DIRITTO A PENSIONE
+// Usa il motore sul ramo "diretta" ma, invece di scegliere una domanda, mostra
+// quali pensioni sono già maturate e quando matureranno le altre (stima di massima).
+// ═══════════════════════════════════════════════════════════
+function renderCertificazione() {
+  setStep(3);
+  document.getElementById('ctitle').textContent = 'Certificazione del diritto a pensione';
+  const M = (S.motore = calcolaMotore());
+  const tornaA = S.posizione ? 'renderStep0()' : 'renderStep2()';
+  const torna = `<div class="btn-row"><button class="btn btn-secondary" onclick="${tornaA}">← Indietro</button><button class="btn btn-primary" onclick="restart()">Nuova simulazione</button></div>`;
+  if (!M) { document.getElementById('cbody').innerHTML = '<div class="callout">⚠️ Motore non disponibile o dati insufficienti.</div>' + torna; return; }
+  const isoIt = d => { const [y, m, g] = d.split('-'); return g + '/' + m + '/' + y; };
+  const gruppi = [
+    ['Diritto già maturato', c => c.stato === 'accessibile'],
+    ['Da verificare', c => c.stato === 'da_verificare'],
+    ['Non ancora maturato', c => c.stato === 'non_accessibile' && c.maturazione]
+  ];
+  const card = c => `<div style="border:1px solid #dde6f0;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#fff">
+      <div style="font-weight:600;font-size:14px">${c.descrizione} <span style="color:var(--muted);font-weight:400;font-size:12px">${c.codice}</span></div>
+      ${c.maturazione ? `<div style="font-size:13px;margin-top:3px">Maturazione stimata: <b>${isoIt(c.maturazione)}</b></div>` : ''}
+      <div style="font-size:13px;color:var(--muted);margin-top:3px">${(c.motivi || []).join(' ')}</div></div>`;
+  let h = '<div class="infobox"><span style="font-size:16px;flex-shrink:0">🔵</span><div>Verifica di massima sui dati disponibili: la certificazione vera e propria resta in capo alla sede INPS.</div></div>';
+  let tot = 0;
+  gruppi.forEach(([tit, f]) => {
+    const l = M.tutti.filter(f); if (!l.length) return; tot += l.length;
+    h += `<div class="stitle" style="margin-top:16px">${tit}</div>` + l.map(card).join('');
+  });
+  if (!tot) h += '<div class="callout">Nessuna pensione risulta maturata o in maturazione con i dati disponibili.</div>';
+  document.getElementById('cbody').innerHTML = h + torna;
 }
 
 function restart() {
